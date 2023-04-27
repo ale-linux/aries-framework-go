@@ -7,6 +7,7 @@ module github.com/hyperledger/aries-framework-go
 // TODO (#2815): Remove circular dependency between the main module and component/storage/edv
 
 require (
+	github.com/IBM/mathlib v0.0.3-0.20230428120512-8afa4e643d4c
 	github.com/PaesslerAG/gval v1.1.0
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/VictoriaMetrics/fastcache v1.5.7
@@ -28,7 +29,6 @@ require (
 	github.com/hyperledger/ursa-wrapper-go v0.3.1
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/kawamuray/jsonpath v0.0.0-20201211160320-7483bafabd7e
-	github.com/kilic/bls12-381 v0.1.1-0.20210503002446-7b7597926c69
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/multiformats/go-multibase v0.1.1
 	github.com/multiformats/go-multihash v0.0.13
@@ -47,11 +47,16 @@ require (
 require (
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/consensys/bavard v0.1.13 // indirect
+	github.com/consensys/gnark-crypto v0.9.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8 // indirect
+	github.com/kilic/bls12-381 v0.1.1-0.20210503002446-7b7597926c69 // indirect
 	github.com/klauspost/compress v1.10.0 // indirect
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1 // indirect
 	github.com/minio/sha256-simd v0.1.1 // indirect
+	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
@@ -64,11 +69,14 @@ require (
 	github.com/tidwall/pretty v1.0.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	rsc.io/tmplfunc v0.0.3 // indirect
 )
+
+replace github.com/hyperledger/aries-framework-go/component/kmscrypto => ./component/kmscrypto
 
 go 1.19
 
