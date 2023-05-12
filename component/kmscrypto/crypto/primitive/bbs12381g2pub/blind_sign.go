@@ -1,0 +1,114 @@
+/*
+Copyright IBM Corp. All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+package bbs12381g2pub
+
+import (
+	"errors"
+	"fmt"
+
+	ml "github.com/IBM/mathlib"
+)
+
+// BlindedMessages represents a set of messages prepared
+// (blinded) to be submitted to a signer for a blind signature.
+type BlindedMessages struct {
+	PK       *PublicKeyWithGenerators
+	Messages [][]byte
+	S        *ml.Zr
+	C        *ml.G1
+	PoK      *POKOfBlindedMessages
+}
+
+// POKOfBlindedMessages is the zero-knowledge proof that the
+// requester knows the messages they have submitted for blind
+// signature in the form of a Pedersen commitment.
+type POKOfBlindedMessages struct {
+	C      *ml.G1
+	ProofC *ProofG1
+}
+
+// VerifyProof verifies the correctness of the zero knowledge
+// proof against the supplied commitment, challenge and public key.
+func (b *POKOfBlindedMessages) VerifyProof(messages []bool, commitment *ml.G1, challenge *ml.Zr, PK *PublicKey) error {
+	pubKeyWithGenerators, err := PK.ToPublicKeyWithGenerators(len(messages))
+	if err != nil {
+		return fmt.Errorf("build generators from public key: %w", err)
+	}
+
+	bases := []*ml.G1{pubKeyWithGenerators.h0}
+
+	for i, in := range messages {
+		if !in {
+			continue
+		}
+
+		bases = append(bases, pubKeyWithGenerators.h[i])
+	}
+
+	err = b.ProofC.Verify(bases, commitment, challenge)
+	if err != nil {
+		return errors.New("invalid proof")
+	}
+
+	return nil
+}
+
+// VerifyBlinding verifies that `msgCommit` is a valid
+// commitment of a set of messages against the appropriate bases.
+func VerifyBlinding(messageBitmap []bool, msgCommit *ml.G1, bmProof *POKOfBlindedMessages, PK *PublicKey) error {
+	challengeBytes := msgCommit.Bytes()
+	challengeBytes = append(challengeBytes, bmProof.C.Bytes()...)
+
+	return bmProof.VerifyProof(messageBitmap, msgCommit, frFromOKM(challengeBytes), PK)
+}
+
+// BlindMessages constructs a commitment to a set of messages
+// that need to be blinded before signing, and generates the
+// corresponding ZKP.
+func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*BlindedMessages, error) {
+	pubKeyWithGenerators, err := PK.ToPublicKeyWithGenerators(len(messages))
+	if err != nil {
+		return nil, fmt.Errorf("build generators from public key: %w", err)
+	}
+
+	commit := NewProverCommittingG1()
+	cb := newCommitmentBuilder(blindedMsgCount + 1)
+	secrets := make([]*ml.Zr, 0, blindedMsgCount+1)
+
+	s := createRandSignatureFr()
+
+	commit.Commit(pubKeyWithGenerators.h0)
+	cb.add(pubKeyWithGenerators.h0, s)
+	secrets = append(secrets, s)
+
+	for i, msg := range messages {
+		if len(msg) == 0 {
+			continue
+		}
+
+		commit.Commit(pubKeyWithGenerators.h[i])
+		cb.add(pubKeyWithGenerators.h[i], frFromOKM(msg))
+		secrets = append(secrets, frFromOKM(msg))
+	}
+
+	C := cb.build()
+	U := commit.Finish()
+
+	challengeBytes := C.Bytes()
+	challengeBytes = append(challengeBytes, U.commitment.Bytes()...)
+
+	return &BlindedMessages{
+		PK:       pubKeyWithGenerators,
+		Messages: messages,
+		S:        s,
+		C:        C,
+		PoK: &POKOfBlindedMessages{
+			C:      U.commitment,
+			ProofC: U.GenerateProof(frFromOKM(challengeBytes), secrets),
+		},
+	}, nil
+}

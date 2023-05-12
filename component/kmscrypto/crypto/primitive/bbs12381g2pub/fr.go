@@ -60,7 +60,7 @@ func messagesToFr(messages [][]byte) []*SignatureMessage {
 	messagesFr := make([]*SignatureMessage, len(messages))
 
 	for i := range messages {
-		messagesFr[i] = ParseSignatureMessage(messages[i])
+		messagesFr[i] = ParseSignatureMessage(messages[i], i)
 	}
 
 	return messagesFr

@@ -12,14 +12,16 @@ import (
 
 // SignatureMessage defines a message to be used for a signature check.
 type SignatureMessage struct {
-	FR *ml.Zr
+	FR  *ml.Zr
+	Idx int
 }
 
 // ParseSignatureMessage parses SignatureMessage from bytes.
-func ParseSignatureMessage(message []byte) *SignatureMessage {
+func ParseSignatureMessage(message []byte, idx int) *SignatureMessage {
 	elm := frFromOKM(message)
 
 	return &SignatureMessage{
-		FR: elm,
+		FR:  elm,
+		Idx: idx,
 	}
 }

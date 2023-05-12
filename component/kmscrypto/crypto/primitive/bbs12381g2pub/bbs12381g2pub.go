@@ -98,7 +98,33 @@ func (bbs *BBSG2Pub) Sign(messages [][]byte, privKeyBytes []byte) ([]byte, error
 		return nil, errors.New("messages are not defined")
 	}
 
-	return bbs.SignWithKey(messages, privKey)
+	return bbs.SignWithKey(messages, nil, privKey)
+}
+
+// BlindSign signs disclosed and blinded messages using private key in compressed form.
+func (bbs *BBSG2Pub) BlindSign(messages [][]byte, commitment *ml.G1, privKeyBytes []byte) ([]byte, error) {
+	privKey, err := UnmarshalPrivateKey(privKeyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal private key: %w", err)
+	}
+
+	if len(messages) == 0 {
+		return nil, errors.New("messages are not defined")
+	}
+
+	return bbs.SignWithKey(messages, commitment, privKey)
+}
+
+// UnblindSign converts a signature over some blind messages into a standard signature.
+func (bbs *BBSG2Pub) UnblindSign(sigBytes []byte, S *ml.Zr) ([]byte, error) {
+	signature, err := ParseSignature(sigBytes)
+	if err != nil {
+		return nil, fmt.Errorf("parse signature: %w", err)
+	}
+
+	signature.S = curve.ModAdd(signature.S, S, curve.GroupOrder)
+
+	return signature.ToBytes()
 }
 
 // VerifyProof verifies BBS+ signature proof for one ore more revealed messages.
@@ -199,7 +225,7 @@ func (bbs *BBSG2Pub) DeriveProof(messages [][]byte, sigBytes, nonce, pubKeyBytes
 }
 
 // SignWithKey signs the one or more messages using BBS+ key pair.
-func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, privKey *PrivateKey) ([]byte, error) {
+func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, commitment *ml.G1, privKey *PrivateKey) ([]byte, error) {
 	var err error
 
 	pubKey := privKey.PublicKey()
@@ -210,9 +236,14 @@ func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, privKey *PrivateKey) ([]byte
 		return nil, fmt.Errorf("build generators from public key: %w", err)
 	}
 
-	messagesFr := make([]*SignatureMessage, len(messages))
-	for i := range messages {
-		messagesFr[i] = ParseSignatureMessage(messages[i])
+	messagesFr := make([]*SignatureMessage, 0, len(messages))
+
+	for i, msg := range messages {
+		if len(msg) == 0 {
+			continue
+		}
+
+		messagesFr = append(messagesFr, ParseSignatureMessage(messages[i], i))
 	}
 
 	e, s := createRandSignatureFr(), createRandSignatureFr()
@@ -221,6 +252,9 @@ func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, privKey *PrivateKey) ([]byte
 	exp.InvModP(curve.GroupOrder)
 
 	b := computeB(s, messagesFr, pubKeyWithGenerators)
+	if len(messagesFr) != len(messages) {
+		b.Add(commitment)
+	}
 
 	sig := b.Mul(frToRepr(exp))
 
@@ -242,7 +276,7 @@ func computeB(s *ml.Zr, messages []*SignatureMessage, key *PublicKeyWithGenerato
 	cb.add(key.h0, s)
 
 	for i := 0; i < len(messages); i++ {
-		cb.add(key.h[i], messages[i].FR)
+		cb.add(key.h[messages[i].Idx], messages[i].FR)
 	}
 
 	return cb.build()
