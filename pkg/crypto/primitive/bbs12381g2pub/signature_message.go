@@ -14,6 +14,6 @@ import (
 type SignatureMessage = bbs.SignatureMessage
 
 // ParseSignatureMessage parses SignatureMessage from bytes.
-func ParseSignatureMessage(message []byte) *SignatureMessage {
-	return bbs.ParseSignatureMessage(message)
+func ParseSignatureMessage(message []byte, idx int) *SignatureMessage {
+	return bbs.ParseSignatureMessage(message, idx)
 }

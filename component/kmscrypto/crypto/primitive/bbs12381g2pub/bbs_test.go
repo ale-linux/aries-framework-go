@@ -83,7 +83,7 @@ func TestBBSG2Pub_SignWithKeyPair(t *testing.T) {
 
 	messagesBytes := [][]byte{[]byte("message1"), []byte("message2")}
 
-	signatureBytes, err := bls.SignWithKey(messagesBytes, privKey)
+	signatureBytes, err := bls.SignWithKey(messagesBytes, nil, privKey)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
 	require.Len(t, signatureBytes, 112)
