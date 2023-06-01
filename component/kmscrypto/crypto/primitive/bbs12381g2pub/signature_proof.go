@@ -35,14 +35,14 @@ func (sp *PoKOfSignatureProof) GetBytesForChallenge(revealedMessages map[int]*Si
 
 	bytes = append(bytes, sp.aBar.Bytes()...)
 	bytes = append(bytes, sp.aPrime.Bytes()...)
-	bytes = append(bytes, pubKey.h0.Bytes()...)
+	bytes = append(bytes, pubKey.H0.Bytes()...)
 	bytes = append(bytes, sp.proofVC1.commitment.Bytes()...)
 	bytes = append(bytes, sp.d.Bytes()...)
-	bytes = append(bytes, pubKey.h0.Bytes()...)
+	bytes = append(bytes, pubKey.H0.Bytes()...)
 
-	for i := range pubKey.h {
+	for i := range pubKey.H {
 		if _, ok := revealedMessages[i]; !ok {
-			bytes = append(bytes, pubKey.h[i].Bytes()...)
+			bytes = append(bytes, pubKey.H[i].Bytes()...)
 		}
 	}
 
@@ -71,7 +71,7 @@ func (sp *PoKOfSignatureProof) Verify(challenge *ml.Zr, pubKey *PublicKeyWithGen
 }
 
 func (sp *PoKOfSignatureProof) verifyVC1Proof(challenge *ml.Zr, pubKey *PublicKeyWithGenerators) error {
-	basesVC1 := []*ml.G1{sp.aPrime, pubKey.h0}
+	basesVC1 := []*ml.G1{sp.aPrime, pubKey.H0}
 	aBarD := sp.aBar.Copy()
 	aBarD.Sub(sp.d)
 
@@ -88,7 +88,7 @@ func (sp *PoKOfSignatureProof) verifyVC2Proof(challenge *ml.Zr, pubKey *PublicKe
 	revealedMessagesCount := len(revealedMessages)
 
 	basesVC2 := make([]*ml.G1, 0, 2+pubKey.messagesCount-revealedMessagesCount)
-	basesVC2 = append(basesVC2, sp.d, pubKey.h0)
+	basesVC2 = append(basesVC2, sp.d, pubKey.H0)
 
 	basesDisclosed := make([]*ml.G1, 0, 1+revealedMessagesCount)
 	exponents := make([]*ml.Zr, 0, 1+revealedMessagesCount)
@@ -98,13 +98,13 @@ func (sp *PoKOfSignatureProof) verifyVC2Proof(challenge *ml.Zr, pubKey *PublicKe
 
 	revealedMessagesInd := 0
 
-	for i := range pubKey.h {
+	for i := range pubKey.H {
 		if _, ok := revealedMessages[i]; ok {
-			basesDisclosed = append(basesDisclosed, pubKey.h[i])
+			basesDisclosed = append(basesDisclosed, pubKey.H[i])
 			exponents = append(exponents, messages[revealedMessagesInd].FR)
 			revealedMessagesInd++
 		} else {
-			basesVC2 = append(basesVC2, pubKey.h[i])
+			basesVC2 = append(basesVC2, pubKey.H[i])
 		}
 	}
 

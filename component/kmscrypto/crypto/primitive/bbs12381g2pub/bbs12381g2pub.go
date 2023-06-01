@@ -273,10 +273,10 @@ func computeB(s *ml.Zr, messages []*SignatureMessage, key *PublicKeyWithGenerato
 	cb := newCommitmentBuilder(len(messages) + basesOffset)
 
 	cb.add(curve.GenG1, curve.NewZrFromInt(1))
-	cb.add(key.h0, s)
+	cb.add(key.H0, s)
 
 	for i := 0; i < len(messages); i++ {
-		cb.add(key.h[messages[i].Idx], messages[i].FR)
+		cb.add(key.H[messages[i].Idx], messages[i].FR)
 	}
 
 	return cb.build()

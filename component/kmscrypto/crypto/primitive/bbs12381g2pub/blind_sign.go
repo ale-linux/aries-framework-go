@@ -39,14 +39,14 @@ func (b *POKOfBlindedMessages) VerifyProof(messages []bool, commitment *ml.G1, c
 		return fmt.Errorf("build generators from public key: %w", err)
 	}
 
-	bases := []*ml.G1{pubKeyWithGenerators.h0}
+	bases := []*ml.G1{pubKeyWithGenerators.H0}
 
 	for i, in := range messages {
 		if !in {
 			continue
 		}
 
-		bases = append(bases, pubKeyWithGenerators.h[i])
+		bases = append(bases, pubKeyWithGenerators.H[i])
 	}
 
 	err = b.ProofC.Verify(bases, commitment, challenge)
@@ -81,8 +81,8 @@ func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*Blin
 
 	s := createRandSignatureFr()
 
-	commit.Commit(pubKeyWithGenerators.h0)
-	cb.add(pubKeyWithGenerators.h0, s)
+	commit.Commit(pubKeyWithGenerators.H0)
+	cb.add(pubKeyWithGenerators.H0, s)
 	secrets = append(secrets, s)
 
 	for i, msg := range messages {
@@ -90,8 +90,8 @@ func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*Blin
 			continue
 		}
 
-		commit.Commit(pubKeyWithGenerators.h[i])
-		cb.add(pubKeyWithGenerators.h[i], frFromOKM(msg))
+		commit.Commit(pubKeyWithGenerators.H[i])
+		cb.add(pubKeyWithGenerators.H[i], frFromOKM(msg))
 		secrets = append(secrets, frFromOKM(msg))
 	}
 
