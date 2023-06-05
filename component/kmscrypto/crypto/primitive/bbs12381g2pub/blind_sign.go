@@ -58,9 +58,10 @@ func (b *POKOfBlindedMessages) VerifyProof(messages []bool, commitment *ml.G1, c
 
 // VerifyBlinding verifies that `msgCommit` is a valid
 // commitment of a set of messages against the appropriate bases.
-func VerifyBlinding(messageBitmap []bool, msgCommit *ml.G1, bmProof *POKOfBlindedMessages, PK *PublicKey) error {
+func VerifyBlinding(messageBitmap []bool, msgCommit *ml.G1, bmProof *POKOfBlindedMessages, PK *PublicKey, nonce []byte) error {
 	challengeBytes := msgCommit.Bytes()
 	challengeBytes = append(challengeBytes, bmProof.C.Bytes()...)
+	challengeBytes = append(challengeBytes, nonce...)
 
 	return bmProof.VerifyProof(messageBitmap, msgCommit, FrFromOKM(challengeBytes), PK)
 }
@@ -68,7 +69,7 @@ func VerifyBlinding(messageBitmap []bool, msgCommit *ml.G1, bmProof *POKOfBlinde
 // BlindMessages constructs a commitment to a set of messages
 // that need to be blinded before signing, and generates the
 // corresponding ZKP.
-func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*BlindedMessages, error) {
+func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int, nonce []byte) (*BlindedMessages, error) {
 	zrs := make([]*ml.Zr, len(messages))
 
 	for i, msg := range messages {
@@ -79,13 +80,13 @@ func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*Blin
 		zrs[i] = FrFromOKM(msg)
 	}
 
-	return BlindMessagesZr(zrs, PK, blindedMsgCount)
+	return BlindMessagesZr(zrs, PK, blindedMsgCount, nonce)
 }
 
 // BlindMessagesZr constructs a commitment to a set of messages
 // that need to be blinded before signing, and generates the
 // corresponding ZKP.
-func BlindMessagesZr(zrs []*ml.Zr, PK *PublicKey, blindedMsgCount int) (*BlindedMessages, error) {
+func BlindMessagesZr(zrs []*ml.Zr, PK *PublicKey, blindedMsgCount int, nonce []byte) (*BlindedMessages, error) {
 	pubKeyWithGenerators, err := PK.ToPublicKeyWithGenerators(len(zrs))
 	if err != nil {
 		return nil, fmt.Errorf("build generators from public key: %w", err)
@@ -116,6 +117,7 @@ func BlindMessagesZr(zrs []*ml.Zr, PK *PublicKey, blindedMsgCount int) (*Blinded
 
 	challengeBytes := C.Bytes()
 	challengeBytes = append(challengeBytes, U.commitment.Bytes()...)
+	challengeBytes = append(challengeBytes, nonce...)
 
 	return &BlindedMessages{
 		PK: pubKeyWithGenerators,

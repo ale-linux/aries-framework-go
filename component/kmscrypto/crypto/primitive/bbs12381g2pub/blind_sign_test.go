@@ -52,10 +52,10 @@ func TestBlindSignMessages(t *testing.T) {
 		true,
 	}
 
-	bm, err := bbs12381g2pub.BlindMessages(blindedMessagesBytes, pubKey, blindMsgCount)
+	bm, err := bbs12381g2pub.BlindMessages(blindedMessagesBytes, pubKey, blindMsgCount, []byte("nonce578"))
 	assert.NoError(t, err)
 
-	err = bbs12381g2pub.VerifyBlinding(blindedMessagesBitmap, bm.C, bm.PoK, pubKey)
+	err = bbs12381g2pub.VerifyBlinding(blindedMessagesBitmap, bm.C, bm.PoK, pubKey, []byte("nonce578"))
 	assert.NoError(t, err)
 
 	bls := bbs12381g2pub.New()
@@ -103,10 +103,10 @@ func TestBlindSignZr(t *testing.T) {
 		false,
 	}
 
-	bm, err := bbs12381g2pub.BlindMessagesZr(blindedMessagesZr, pubKey, blindMsgCount)
+	bm, err := bbs12381g2pub.BlindMessagesZr(blindedMessagesZr, pubKey, blindMsgCount, []byte("nonce23423"))
 	assert.NoError(t, err)
 
-	err = bbs12381g2pub.VerifyBlinding(blindedMessagesBitmap, bm.C, bm.PoK, pubKey)
+	err = bbs12381g2pub.VerifyBlinding(blindedMessagesBitmap, bm.C, bm.PoK, pubKey, []byte("nonce23423"))
 	assert.NoError(t, err)
 
 	bls := bbs12381g2pub.New()
