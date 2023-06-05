@@ -164,7 +164,7 @@ func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyByt
 	proofNonce := ParseProofNonce(nonce)
 	proofNonceBytes := proofNonce.ToBytes()
 	challengeBytes = append(challengeBytes, proofNonceBytes...)
-	proofChallenge := frFromOKM(challengeBytes)
+	proofChallenge := FrFromOKM(challengeBytes)
 
 	return signatureProof.Verify(proofChallenge, publicKeyWithGenerators, revealedMessages, messages)
 }
@@ -208,7 +208,7 @@ func (bbs *BBSG2Pub) DeriveProof(messages [][]byte, sigBytes, nonce, pubKeyBytes
 	proofNonceBytes := proofNonce.ToBytes()
 	challengeBytes = append(challengeBytes, proofNonceBytes...)
 
-	proofChallenge := frFromOKM(challengeBytes)
+	proofChallenge := FrFromOKM(challengeBytes)
 
 	proof := pokSignature.GenerateProof(proofChallenge)
 
@@ -337,7 +337,7 @@ type ProofNonce struct {
 // ParseProofNonce creates a new ProofNonce from bytes.
 func ParseProofNonce(proofNonceBytes []byte) *ProofNonce {
 	return &ProofNonce{
-		frFromOKM(proofNonceBytes),
+		FrFromOKM(proofNonceBytes),
 	}
 }
 

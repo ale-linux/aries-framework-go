@@ -16,11 +16,10 @@ import (
 // BlindedMessages represents a set of messages prepared
 // (blinded) to be submitted to a signer for a blind signature.
 type BlindedMessages struct {
-	PK       *PublicKeyWithGenerators
-	Messages [][]byte
-	S        *ml.Zr
-	C        *ml.G1
-	PoK      *POKOfBlindedMessages
+	PK  *PublicKeyWithGenerators
+	S   *ml.Zr
+	C   *ml.G1
+	PoK *POKOfBlindedMessages
 }
 
 // POKOfBlindedMessages is the zero-knowledge proof that the
@@ -63,14 +62,31 @@ func VerifyBlinding(messageBitmap []bool, msgCommit *ml.G1, bmProof *POKOfBlinde
 	challengeBytes := msgCommit.Bytes()
 	challengeBytes = append(challengeBytes, bmProof.C.Bytes()...)
 
-	return bmProof.VerifyProof(messageBitmap, msgCommit, frFromOKM(challengeBytes), PK)
+	return bmProof.VerifyProof(messageBitmap, msgCommit, FrFromOKM(challengeBytes), PK)
 }
 
 // BlindMessages constructs a commitment to a set of messages
 // that need to be blinded before signing, and generates the
 // corresponding ZKP.
 func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*BlindedMessages, error) {
-	pubKeyWithGenerators, err := PK.ToPublicKeyWithGenerators(len(messages))
+	zrs := make([]*ml.Zr, len(messages))
+
+	for i, msg := range messages {
+		if len(msg) == 0 {
+			continue
+		}
+
+		zrs[i] = FrFromOKM(msg)
+	}
+
+	return BlindMessagesZr(zrs, PK, blindedMsgCount)
+}
+
+// BlindMessagesZr constructs a commitment to a set of messages
+// that need to be blinded before signing, and generates the
+// corresponding ZKP.
+func BlindMessagesZr(zrs []*ml.Zr, PK *PublicKey, blindedMsgCount int) (*BlindedMessages, error) {
+	pubKeyWithGenerators, err := PK.ToPublicKeyWithGenerators(len(zrs))
 	if err != nil {
 		return nil, fmt.Errorf("build generators from public key: %w", err)
 	}
@@ -85,14 +101,14 @@ func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*Blin
 	cb.add(pubKeyWithGenerators.H0, s)
 	secrets = append(secrets, s)
 
-	for i, msg := range messages {
-		if len(msg) == 0 {
+	for i, zr := range zrs {
+		if zr == nil {
 			continue
 		}
 
 		commit.Commit(pubKeyWithGenerators.H[i])
-		cb.add(pubKeyWithGenerators.H[i], frFromOKM(msg))
-		secrets = append(secrets, frFromOKM(msg))
+		cb.add(pubKeyWithGenerators.H[i], zr)
+		secrets = append(secrets, zr)
 	}
 
 	C := cb.build()
@@ -102,13 +118,12 @@ func BlindMessages(messages [][]byte, PK *PublicKey, blindedMsgCount int) (*Blin
 	challengeBytes = append(challengeBytes, U.commitment.Bytes()...)
 
 	return &BlindedMessages{
-		PK:       pubKeyWithGenerators,
-		Messages: messages,
-		S:        s,
-		C:        C,
+		PK: pubKeyWithGenerators,
+		S:  s,
+		C:  C,
 		PoK: &POKOfBlindedMessages{
 			C:      U.commitment,
-			ProofC: U.GenerateProof(frFromOKM(challengeBytes), secrets),
+			ProofC: U.GenerateProof(FrFromOKM(challengeBytes), secrets),
 		},
 	}, nil
 }

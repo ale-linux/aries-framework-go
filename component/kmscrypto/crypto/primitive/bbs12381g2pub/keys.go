@@ -155,7 +155,7 @@ func GenerateKeyPair(h func() hash.Hash, seed []byte) (*PublicKey, *PrivateKey, 
 		return nil, nil, err
 	}
 
-	privKeyFr := frFromOKM(okm)
+	privKeyFr := FrFromOKM(okm)
 
 	privKey := &PrivateKey{privKeyFr}
 	pubKey := privKey.PublicKey()
