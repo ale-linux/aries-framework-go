@@ -55,6 +55,12 @@ func TestBlindSignMessages(t *testing.T) {
 	bm, err := bbs12381g2pub.BlindMessages(blindedMessagesBytes, pubKey, blindMsgCount, []byte("nonce578"))
 	assert.NoError(t, err)
 
+	S := bm.S
+
+	bmBytes := bm.Bytes()
+	bm, err = bbs12381g2pub.ParseBlindedMessages(bmBytes)
+	assert.NoError(t, err)
+
 	err = bbs12381g2pub.VerifyBlinding(blindedMessagesBitmap, bm.C, bm.PoK, pubKey, []byte("nonce578"))
 	assert.NoError(t, err)
 
@@ -69,7 +75,7 @@ func TestBlindSignMessages(t *testing.T) {
 	require.NotEmpty(t, signatureBytes)
 	require.Len(t, signatureBytes, 112)
 
-	signatureBytes, err = bls.UnblindSign(signatureBytes, bm.S)
+	signatureBytes, err = bls.UnblindSign(signatureBytes, S)
 	require.NoError(t, err)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)

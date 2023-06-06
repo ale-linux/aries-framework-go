@@ -22,6 +22,47 @@ type BlindedMessages struct {
 	PoK *POKOfBlindedMessages
 }
 
+func (b *BlindedMessages) Bytes() []byte {
+	bytes := make([]byte, 0)
+
+	bytes = append(bytes, b.C.Compressed()...)
+	bytes = append(bytes, b.PoK.C.Compressed()...)
+	bytes = append(bytes, b.PoK.ProofC.ToBytes()...)
+
+	return bytes
+}
+
+func ParseBlindedMessages(bytes []byte) (*BlindedMessages, error) {
+	offset := 0
+
+	C, err := curve.NewG1FromCompressed(bytes[offset : offset+g1CompressedSize])
+	if err != nil {
+		return nil, fmt.Errorf("parse G1 point (C): %w", err)
+	}
+
+	offset += g1CompressedSize
+
+	PoKC, err := curve.NewG1FromCompressed(bytes[offset : offset+g1CompressedSize])
+	if err != nil {
+		return nil, fmt.Errorf("parse G1 point (PoKC): %w", err)
+	}
+
+	offset += g1CompressedSize
+
+	proof, err := ParseProofG1(bytes[offset:])
+	if err != nil {
+		return nil, fmt.Errorf("parse G1 proof: %w", err)
+	}
+
+	return &BlindedMessages{
+		C: C,
+		PoK: &POKOfBlindedMessages{
+			C:      PoKC,
+			ProofC: proof,
+		},
+	}, nil
+}
+
 // POKOfBlindedMessages is the zero-knowledge proof that the
 // requester knows the messages they have submitted for blind
 // signature in the form of a Pedersen commitment.
