@@ -102,7 +102,7 @@ func (bbs *BBSG2Pub) Sign(messages [][]byte, privKeyBytes []byte) ([]byte, error
 }
 
 // BlindSign signs disclosed and blinded messages using private key in compressed form.
-func (bbs *BBSG2Pub) BlindSign(messages [][]byte, commitment *ml.G1, privKeyBytes []byte) ([]byte, error) {
+func (bbs *BBSG2Pub) BlindSign(messages []*SignatureMessage, msgCount int, commitment *ml.G1, privKeyBytes []byte) ([]byte, error) {
 	privKey, err := UnmarshalPrivateKey(privKeyBytes)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal private key: %w", err)
@@ -112,7 +112,7 @@ func (bbs *BBSG2Pub) BlindSign(messages [][]byte, commitment *ml.G1, privKeyByte
 		return nil, errors.New("messages are not defined")
 	}
 
-	return bbs.SignWithKey(messages, commitment, privKey)
+	return bbs.SignWithKeyFr(messages, msgCount, commitment, privKey)
 }
 
 // UnblindSign converts a signature over some blind messages into a standard signature.
@@ -129,6 +129,14 @@ func (bbs *BBSG2Pub) UnblindSign(sigBytes []byte, S *ml.Zr) ([]byte, error) {
 
 // VerifyProof verifies BBS+ signature proof for one ore more revealed messages.
 func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyBytes []byte) error {
+
+	messages := messagesToFr(messagesBytes)
+
+	return bbs.VerifyProofFr(messages, proof, nonce, pubKeyBytes)
+}
+
+// VerifyProof verifies BBS+ signature proof for one ore more revealed messages.
+func (bbs *BBSG2Pub) VerifyProofFr(messages []*SignatureMessage, proof, nonce, pubKeyBytes []byte) error {
 	payload, err := parsePoKPayload(proof)
 	if err != nil {
 		return fmt.Errorf("parse signature proof: %w", err)
@@ -138,8 +146,6 @@ func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyByt
 	if err != nil {
 		return fmt.Errorf("parse signature proof: %w", err)
 	}
-
-	messages := messagesToFr(messagesBytes)
 
 	pubKey, err := UnmarshalPublicKey(pubKeyBytes)
 	if err != nil {
@@ -172,15 +178,21 @@ func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyByt
 // DeriveProof derives a proof of BBS+ signature with some messages disclosed.
 func (bbs *BBSG2Pub) DeriveProof(messages [][]byte, sigBytes, nonce, pubKeyBytes []byte,
 	revealedIndexes []int) ([]byte, error) {
+
+	return bbs.DeriveProofZr(messagesToFr(messages), sigBytes, nonce, pubKeyBytes, revealedIndexes)
+}
+
+// DeriveProof derives a proof of BBS+ signature with some messages disclosed.
+func (bbs *BBSG2Pub) DeriveProofZr(messagesFr []*SignatureMessage, sigBytes, nonce, pubKeyBytes []byte,
+	revealedIndexes []int) ([]byte, error) {
+
 	if len(revealedIndexes) == 0 {
 		return nil, errors.New("no message to reveal")
 	}
 
 	sort.Ints(revealedIndexes)
 
-	messagesCount := len(messages)
-
-	messagesFr := messagesToFr(messages)
+	messagesCount := len(messagesFr)
 
 	pubKey, err := UnmarshalPublicKey(pubKeyBytes)
 	if err != nil {
@@ -226,15 +238,6 @@ func (bbs *BBSG2Pub) DeriveProof(messages [][]byte, sigBytes, nonce, pubKeyBytes
 
 // SignWithKey signs the one or more messages using BBS+ key pair.
 func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, commitment *ml.G1, privKey *PrivateKey) ([]byte, error) {
-	var err error
-
-	pubKey := privKey.PublicKey()
-	messagesCount := len(messages)
-
-	pubKeyWithGenerators, err := pubKey.ToPublicKeyWithGenerators(messagesCount)
-	if err != nil {
-		return nil, fmt.Errorf("build generators from public key: %w", err)
-	}
 
 	messagesFr := make([]*SignatureMessage, 0, len(messages))
 
@@ -246,13 +249,27 @@ func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, commitment *ml.G1, privKey *
 		messagesFr = append(messagesFr, ParseSignatureMessage(messages[i], i))
 	}
 
+	return bbs.SignWithKeyFr(messagesFr, len(messages), commitment, privKey)
+}
+
+// SignWithKey signs the one or more messages using BBS+ key pair.
+func (bbs *BBSG2Pub) SignWithKeyFr(messagesFr []*SignatureMessage, messagesCount int, commitment *ml.G1, privKey *PrivateKey) ([]byte, error) {
+	var err error
+
+	pubKey := privKey.PublicKey()
+
+	pubKeyWithGenerators, err := pubKey.ToPublicKeyWithGenerators(messagesCount)
+	if err != nil {
+		return nil, fmt.Errorf("build generators from public key: %w", err)
+	}
+
 	e, s := createRandSignatureFr(), createRandSignatureFr()
 	exp := privKey.FR.Copy()
 	exp = exp.Plus(e)
 	exp.InvModP(curve.GroupOrder)
 
 	b := computeB(s, messagesFr, pubKeyWithGenerators)
-	if len(messagesFr) != len(messages) {
+	if len(messagesFr) != messagesCount {
 		b.Add(commitment)
 	}
 

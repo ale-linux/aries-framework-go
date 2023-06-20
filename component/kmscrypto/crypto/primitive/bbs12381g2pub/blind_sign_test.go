@@ -38,11 +38,15 @@ func TestBlindSignMessages(t *testing.T) {
 		[]byte("message4"),
 	}
 
-	clearMessagesBytes := [][]byte{
-		nil,
-		[]byte("message2"),
-		[]byte("message3"),
-		nil,
+	msgToSign := []*bbs12381g2pub.SignatureMessage{
+		{
+			FR:  bbs12381g2pub.FrFromOKM([]byte("message2")),
+			Idx: 1,
+		},
+		{
+			FR:  bbs12381g2pub.FrFromOKM([]byte("message3")),
+			Idx: 2,
+		},
 	}
 
 	blindedMessagesBitmap := []bool{
@@ -69,7 +73,7 @@ func TestBlindSignMessages(t *testing.T) {
 	privKeyBytes, err := privKey.Marshal()
 	require.NoError(t, err)
 
-	signatureBytes, err := bls.BlindSign(clearMessagesBytes, bm.C, privKeyBytes)
+	signatureBytes, err := bls.BlindSign(msgToSign, 4, bm.C, privKeyBytes)
 	require.NoError(t, err)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
@@ -99,9 +103,11 @@ func TestBlindSignZr(t *testing.T) {
 		nil,
 	}
 
-	clearMessagesBytes := [][]byte{
-		nil,
-		[]byte("message2"),
+	msgToSign := []*bbs12381g2pub.SignatureMessage{
+		{
+			FR:  bbs12381g2pub.FrFromOKM([]byte("message2")),
+			Idx: 1,
+		},
 	}
 
 	blindedMessagesBitmap := []bool{
@@ -120,7 +126,7 @@ func TestBlindSignZr(t *testing.T) {
 	privKeyBytes, err := privKey.Marshal()
 	require.NoError(t, err)
 
-	signatureBytes, err := bls.BlindSign(clearMessagesBytes, bm.C, privKeyBytes)
+	signatureBytes, err := bls.BlindSign(msgToSign, 2, bm.C, privKeyBytes)
 	require.NoError(t, err)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
@@ -142,7 +148,7 @@ func TestBlindSignZr(t *testing.T) {
 
 	messagesZr := []*bbs12381g2pub.SignatureMessage{
 		{FR: zr, Idx: 0},
-		{FR: bbs12381g2pub.FrFromOKM(clearMessagesBytes[1]), Idx: 1},
+		msgToSign[0],
 	}
 
 	err = signature.Verify(messagesZr, publicKeyWithGenerators)
