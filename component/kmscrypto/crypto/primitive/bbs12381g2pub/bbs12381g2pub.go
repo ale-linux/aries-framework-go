@@ -224,9 +224,9 @@ func (bbs *BBSG2Pub) DeriveProofZr(messagesFr []*SignatureMessage, sigBytes, non
 
 	proof := pokSignature.GenerateProof(proofChallenge)
 
-	payload := newPoKPayload(messagesCount, revealedIndexes)
+	payload := NewPoKPayload(messagesCount, revealedIndexes)
 
-	payloadBytes, err := payload.toBytes()
+	payloadBytes, err := payload.ToBytes()
 	if err != nil {
 		return nil, fmt.Errorf("derive proof: paylod to bytes: %w", err)
 	}

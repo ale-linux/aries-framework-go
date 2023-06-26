@@ -13,10 +13,10 @@ import (
 )
 
 func Test_pokPayload(t *testing.T) {
-	payload := newPoKPayload(4, []int{0, 2})
+	payload := NewPoKPayload(4, []int{0, 2})
 	require.Equal(t, 3, payload.lenInBytes())
 
-	bytes, err := payload.toBytes()
+	bytes, err := payload.ToBytes()
 	require.NoError(t, err)
 	require.Len(t, bytes, 3)
 
@@ -30,10 +30,10 @@ func Test_pokPayload(t *testing.T) {
 }
 
 func Test_pokPayloadFail(t *testing.T) {
-	payload := newPoKPayload(1, []int{0, 2, 4, 5, 9})
+	payload := NewPoKPayload(1, []int{0, 2, 4, 5, 9})
 	require.Equal(t, 3, payload.lenInBytes())
 
-	_, err := payload.toBytes()
+	_, err := payload.ToBytes()
 	require.EqualError(t, err, "invalid size of PoK payload")
 
 	bytes := []byte{9, 0}

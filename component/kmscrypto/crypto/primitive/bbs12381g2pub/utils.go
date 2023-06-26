@@ -78,7 +78,7 @@ func parsePoKPayload(bytes []byte) (*pokPayload, error) {
 }
 
 // nolint:gomnd
-func (p *pokPayload) toBytes() ([]byte, error) {
+func (p *pokPayload) ToBytes() ([]byte, error) {
 	bytes := make([]byte, p.lenInBytes())
 
 	binary.BigEndian.PutUint16(bytes, uint16(p.messagesCount))
@@ -109,7 +109,7 @@ func lenInBytes(messagesCount int) int {
 	return 2 + (messagesCount / 8) + 1 //nolint:gomnd
 }
 
-func newPoKPayload(messagesCount int, revealed []int) *pokPayload {
+func NewPoKPayload(messagesCount int, revealed []int) *pokPayload {
 	return &pokPayload{
 		messagesCount: messagesCount,
 		revealed:      revealed,
