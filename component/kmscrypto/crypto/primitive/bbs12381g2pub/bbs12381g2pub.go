@@ -101,32 +101,6 @@ func (bbs *BBSG2Pub) Sign(messages [][]byte, privKeyBytes []byte) ([]byte, error
 	return bbs.SignWithKey(messages, nil, privKey)
 }
 
-// BlindSign signs disclosed and blinded messages using private key in compressed form.
-func (bbs *BBSG2Pub) BlindSign(messages []*SignatureMessage, msgCount int, commitment *ml.G1, privKeyBytes []byte) ([]byte, error) {
-	privKey, err := UnmarshalPrivateKey(privKeyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal private key: %w", err)
-	}
-
-	if len(messages) == 0 {
-		return nil, errors.New("messages are not defined")
-	}
-
-	return bbs.SignWithKeyFr(messages, msgCount, commitment, privKey)
-}
-
-// UnblindSign converts a signature over some blind messages into a standard signature.
-func (bbs *BBSG2Pub) UnblindSign(sigBytes []byte, S *ml.Zr) ([]byte, error) {
-	signature, err := ParseSignature(sigBytes)
-	if err != nil {
-		return nil, fmt.Errorf("parse signature: %w", err)
-	}
-
-	signature.S = curve.ModAdd(signature.S, S, curve.GroupOrder)
-
-	return signature.ToBytes()
-}
-
 // VerifyProof verifies BBS+ signature proof for one ore more revealed messages.
 func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyBytes []byte) error {
 
@@ -137,12 +111,12 @@ func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyByt
 
 // VerifyProof verifies BBS+ signature proof for one ore more revealed messages.
 func (bbs *BBSG2Pub) VerifyProofFr(messages []*SignatureMessage, proof, nonce, pubKeyBytes []byte) error {
-	payload, err := parsePoKPayload(proof)
+	payload, err := ParsePoKPayload(proof)
 	if err != nil {
 		return fmt.Errorf("parse signature proof: %w", err)
 	}
 
-	signatureProof, err := ParseSignatureProof(proof[payload.lenInBytes():])
+	signatureProof, err := ParseSignatureProof(proof[payload.LenInBytes():])
 	if err != nil {
 		return fmt.Errorf("parse signature proof: %w", err)
 	}
@@ -157,13 +131,13 @@ func (bbs *BBSG2Pub) VerifyProofFr(messages []*SignatureMessage, proof, nonce, p
 		return fmt.Errorf("build generators from public key: %w", err)
 	}
 
-	if len(payload.revealed) > len(messages) {
+	if len(payload.Revealed) > len(messages) {
 		return fmt.Errorf("payload revealed bigger from messages")
 	}
 
 	revealedMessages := make(map[int]*SignatureMessage)
-	for i := range payload.revealed {
-		revealedMessages[payload.revealed[i]] = messages[i]
+	for i := range payload.Revealed {
+		revealedMessages[payload.Revealed[i]] = messages[i]
 	}
 
 	challengeBytes := signatureProof.GetBytesForChallenge(revealedMessages, publicKeyWithGenerators)
@@ -287,16 +261,16 @@ func (bbs *BBSG2Pub) SignWithKeyFr(messagesFr []*SignatureMessage, messagesCount
 func computeB(s *ml.Zr, messages []*SignatureMessage, key *PublicKeyWithGenerators) *ml.G1 {
 	const basesOffset = 2
 
-	cb := newCommitmentBuilder(len(messages) + basesOffset)
+	cb := NewCommitmentBuilder(len(messages) + basesOffset)
 
-	cb.add(curve.GenG1, curve.NewZrFromInt(1))
-	cb.add(key.H0, s)
+	cb.Add(curve.GenG1, curve.NewZrFromInt(1))
+	cb.Add(key.H0, s)
 
 	for i := 0; i < len(messages); i++ {
-		cb.add(key.H[messages[i].Idx], messages[i].FR)
+		cb.Add(key.H[messages[i].Idx], messages[i].FR)
 	}
 
-	return cb.build()
+	return cb.Build()
 }
 
 type commitmentBuilder struct {
@@ -304,19 +278,19 @@ type commitmentBuilder struct {
 	scalars []*ml.Zr
 }
 
-func newCommitmentBuilder(expectedSize int) *commitmentBuilder {
+func NewCommitmentBuilder(expectedSize int) *commitmentBuilder {
 	return &commitmentBuilder{
 		bases:   make([]*ml.G1, 0, expectedSize),
 		scalars: make([]*ml.Zr, 0, expectedSize),
 	}
 }
 
-func (cb *commitmentBuilder) add(base *ml.G1, scalar *ml.Zr) {
+func (cb *commitmentBuilder) Add(base *ml.G1, scalar *ml.Zr) {
 	cb.bases = append(cb.bases, base)
 	cb.scalars = append(cb.scalars, scalar)
 }
 
-func (cb *commitmentBuilder) build() *ml.G1 {
+func (cb *commitmentBuilder) Build() *ml.G1 {
 	return sumOfG1Products(cb.bases, cb.scalars)
 }
 

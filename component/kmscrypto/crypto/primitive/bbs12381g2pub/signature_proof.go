@@ -22,7 +22,7 @@ type PoKOfSignatureProof struct {
 	d      *ml.G1
 
 	proofVC1 *ProofG1
-	proofVC2 *ProofG1
+	ProofVC2 *ProofG1
 }
 
 // GetBytesForChallenge creates bytes for proof challenge.
@@ -46,7 +46,7 @@ func (sp *PoKOfSignatureProof) GetBytesForChallenge(revealedMessages map[int]*Si
 		}
 	}
 
-	bytes = append(bytes, sp.proofVC2.commitment.Bytes()...)
+	bytes = append(bytes, sp.ProofVC2.commitment.Bytes()...)
 
 	return bytes
 }
@@ -122,7 +122,7 @@ func (sp *PoKOfSignatureProof) verifyVC2Proof(challenge *ml.Zr, pubKey *PublicKe
 
 	pr.Neg()
 
-	err := sp.proofVC2.Verify(basesVC2, pr, challenge)
+	err := sp.ProofVC2.Verify(basesVC2, pr, challenge)
 	if err != nil {
 		return errors.New("bad signature")
 	}
@@ -144,7 +144,7 @@ func (sp *PoKOfSignatureProof) ToBytes() []byte {
 	bytes = append(bytes, lenBytes...)
 	bytes = append(bytes, proof1Bytes...)
 
-	bytes = append(bytes, sp.proofVC2.ToBytes()...)
+	bytes = append(bytes, sp.ProofVC2.ToBytes()...)
 
 	return bytes
 }
@@ -152,14 +152,14 @@ func (sp *PoKOfSignatureProof) ToBytes() []byte {
 // ProofG1 is a proof of knowledge of a signature and hidden messages.
 type ProofG1 struct {
 	commitment *ml.G1
-	responses  []*ml.Zr
+	Responses  []*ml.Zr
 }
 
 // NewProofG1 creates a new ProofG1.
 func NewProofG1(commitment *ml.G1, responses []*ml.Zr) *ProofG1 {
 	return &ProofG1{
 		commitment: commitment,
-		responses:  responses,
+		Responses:  responses,
 	}
 }
 
@@ -178,7 +178,7 @@ func (pg1 *ProofG1) Verify(bases []*ml.G1, commitment *ml.G1, challenge *ml.Zr) 
 func (pg1 *ProofG1) getChallengeContribution(bases []*ml.G1, commitment *ml.G1,
 	challenge *ml.Zr) *ml.G1 {
 	points := append(bases, commitment)
-	scalars := append(pg1.responses, challenge)
+	scalars := append(pg1.Responses, challenge)
 
 	return sumOfG1Products(points, scalars)
 }
@@ -191,11 +191,11 @@ func (pg1 *ProofG1) ToBytes() []byte {
 	bytes = append(bytes, commitmentBytes...)
 
 	lenBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(lenBytes, uint32(len(pg1.responses)))
+	binary.BigEndian.PutUint32(lenBytes, uint32(len(pg1.Responses)))
 	bytes = append(bytes, lenBytes...)
 
-	for i := range pg1.responses {
-		responseBytes := frToRepr(pg1.responses[i]).Bytes()
+	for i := range pg1.Responses {
+		responseBytes := frToRepr(pg1.Responses[i]).Bytes()
 		bytes = append(bytes, responseBytes...)
 	}
 
@@ -241,7 +241,7 @@ func ParseSignatureProof(sigProofBytes []byte) (*PoKOfSignatureProof, error) {
 		aBar:     g1Points[1],
 		d:        g1Points[2],
 		proofVC1: proofVc1,
-		proofVC2: proofVc2,
+		ProofVC2: proofVc2,
 	}, nil
 }
 

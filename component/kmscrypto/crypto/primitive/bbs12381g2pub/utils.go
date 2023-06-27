@@ -53,11 +53,11 @@ func bitvectorToIndexes(data []byte) []int {
 
 type pokPayload struct {
 	messagesCount int
-	revealed      []int
+	Revealed      []int
 }
 
 // nolint:gomnd
-func parsePoKPayload(bytes []byte) (*pokPayload, error) {
+func ParsePoKPayload(bytes []byte) (*pokPayload, error) {
 	if len(bytes) < 2 {
 		return nil, errors.New("invalid size of PoK payload")
 	}
@@ -73,19 +73,19 @@ func parsePoKPayload(bytes []byte) (*pokPayload, error) {
 
 	return &pokPayload{
 		messagesCount: messagesCount,
-		revealed:      revealed,
+		Revealed:      revealed,
 	}, nil
 }
 
 // nolint:gomnd
 func (p *pokPayload) ToBytes() ([]byte, error) {
-	bytes := make([]byte, p.lenInBytes())
+	bytes := make([]byte, p.LenInBytes())
 
 	binary.BigEndian.PutUint16(bytes, uint16(p.messagesCount))
 
 	bitvector := bytes[2:]
 
-	for _, r := range p.revealed {
+	for _, r := range p.Revealed {
 		idx := r / 8
 		bit := r % 8
 
@@ -101,7 +101,7 @@ func (p *pokPayload) ToBytes() ([]byte, error) {
 	return bytes, nil
 }
 
-func (p *pokPayload) lenInBytes() int {
+func (p *pokPayload) LenInBytes() int {
 	return lenInBytes(p.messagesCount)
 }
 
@@ -112,7 +112,7 @@ func lenInBytes(messagesCount int) int {
 func NewPoKPayload(messagesCount int, revealed []int) *pokPayload {
 	return &pokPayload{
 		messagesCount: messagesCount,
-		revealed:      revealed,
+		Revealed:      revealed,
 	}
 }
 
