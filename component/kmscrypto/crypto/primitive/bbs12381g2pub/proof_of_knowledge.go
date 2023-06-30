@@ -164,7 +164,7 @@ func (pos *PoKOfSignature) GenerateProof(challengeHash *ml.Zr) *PoKOfSignaturePr
 
 // ProverCommittedG1 helps to generate a ProofG1.
 type ProverCommittedG1 struct {
-	bases           []*ml.G1
+	Bases           []*ml.G1
 	BlindingFactors []*ml.Zr
 	Commitment      *ml.G1
 }
@@ -173,7 +173,7 @@ type ProverCommittedG1 struct {
 func (g *ProverCommittedG1) ToBytes() []byte {
 	bytes := make([]byte, 0)
 
-	for _, base := range g.bases {
+	for _, base := range g.Bases {
 		bytes = append(bytes, base.Bytes()...)
 	}
 
@@ -182,7 +182,7 @@ func (g *ProverCommittedG1) ToBytes() []byte {
 
 // GenerateProof generates proof ProofG1 for all secrets.
 func (g *ProverCommittedG1) GenerateProof(challenge *ml.Zr, secrets []*ml.Zr) *ProofG1 {
-	responses := make([]*ml.Zr, len(g.bases))
+	responses := make([]*ml.Zr, len(g.Bases))
 
 	for i := range g.BlindingFactors {
 		c := challenge.Mul(secrets[i])
@@ -192,7 +192,7 @@ func (g *ProverCommittedG1) GenerateProof(challenge *ml.Zr, secrets []*ml.Zr) *P
 	}
 
 	return &ProofG1{
-		commitment: g.Commitment,
+		Commitment: g.Commitment,
 		Responses:  responses,
 	}
 }
@@ -223,7 +223,7 @@ func (pc *ProverCommittingG1) Finish() *ProverCommittedG1 {
 	commitment := sumOfG1Products(pc.bases, pc.BlindingFactors)
 
 	return &ProverCommittedG1{
-		bases:           pc.bases,
+		Bases:           pc.bases,
 		BlindingFactors: pc.BlindingFactors,
 		Commitment:      commitment,
 	}

@@ -36,7 +36,7 @@ func (sp *PoKOfSignatureProof) GetBytesForChallenge(revealedMessages map[int]*Si
 	bytes = append(bytes, sp.aBar.Bytes()...)
 	bytes = append(bytes, sp.aPrime.Bytes()...)
 	bytes = append(bytes, pubKey.H0.Bytes()...)
-	bytes = append(bytes, sp.proofVC1.commitment.Bytes()...)
+	bytes = append(bytes, sp.proofVC1.Commitment.Bytes()...)
 	bytes = append(bytes, sp.d.Bytes()...)
 	bytes = append(bytes, pubKey.H0.Bytes()...)
 
@@ -46,7 +46,7 @@ func (sp *PoKOfSignatureProof) GetBytesForChallenge(revealedMessages map[int]*Si
 		}
 	}
 
-	bytes = append(bytes, sp.ProofVC2.commitment.Bytes()...)
+	bytes = append(bytes, sp.ProofVC2.Commitment.Bytes()...)
 
 	return bytes
 }
@@ -151,14 +151,14 @@ func (sp *PoKOfSignatureProof) ToBytes() []byte {
 
 // ProofG1 is a proof of knowledge of a signature and hidden messages.
 type ProofG1 struct {
-	commitment *ml.G1
+	Commitment *ml.G1
 	Responses  []*ml.Zr
 }
 
 // NewProofG1 creates a new ProofG1.
 func NewProofG1(commitment *ml.G1, responses []*ml.Zr) *ProofG1 {
 	return &ProofG1{
-		commitment: commitment,
+		Commitment: commitment,
 		Responses:  responses,
 	}
 }
@@ -166,7 +166,7 @@ func NewProofG1(commitment *ml.G1, responses []*ml.Zr) *ProofG1 {
 // Verify verifies the ProofG1.
 func (pg1 *ProofG1) Verify(bases []*ml.G1, commitment *ml.G1, challenge *ml.Zr) error {
 	contribution := pg1.getChallengeContribution(bases, commitment, challenge)
-	contribution.Sub(pg1.commitment)
+	contribution.Sub(pg1.Commitment)
 
 	if !contribution.IsInfinity() {
 		return errors.New("contribution is not zero")
@@ -187,7 +187,7 @@ func (pg1 *ProofG1) getChallengeContribution(bases []*ml.G1, commitment *ml.G1,
 func (pg1 *ProofG1) ToBytes() []byte {
 	bytes := make([]byte, 0)
 
-	commitmentBytes := pg1.commitment.Compressed()
+	commitmentBytes := pg1.Commitment.Compressed()
 	bytes = append(bytes, commitmentBytes...)
 
 	lenBytes := make([]byte, 4)
