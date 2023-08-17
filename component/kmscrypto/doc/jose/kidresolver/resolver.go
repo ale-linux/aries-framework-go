@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/doc/util/kmsdidkey"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/doc/util/kmsdidkey"
 	cryptoapi "github.com/hyperledger/aries-framework-go/spi/crypto"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 )

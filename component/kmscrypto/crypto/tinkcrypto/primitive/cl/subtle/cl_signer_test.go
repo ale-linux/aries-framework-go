@@ -15,7 +15,7 @@ import (
 	"github.com/hyperledger/ursa-wrapper-go/pkg/libursa/ursa"
 	"github.com/stretchr/testify/require"
 
-	clapi "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/api"
+	clapi "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/api"
 )
 
 func TestIsCLSigner(t *testing.T) {

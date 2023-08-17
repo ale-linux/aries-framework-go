@@ -31,14 +31,14 @@ import (
 	kmsapi "github.com/hyperledger/aries-framework-go/spi/kms"
 	"github.com/hyperledger/aries-framework-go/spi/secretlock"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/primitive/bbs12381g2pub"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/kms"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/kms/localkms/internal/keywrapper"
-	mocksecretlock "github.com/hyperledger/aries-framework-go/component/kmscrypto/mock/secretlock"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/secretlock/local"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/secretlock/local/masterlock/hkdf"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/secretlock/noop"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/primitive/bbs12381g2pub"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/kms"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/kms/localkms/internal/keywrapper"
+	mocksecretlock "github.com/ale-linux/aries-framework-go/component/kmscrypto/mock/secretlock"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/secretlock/local"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/secretlock/local/masterlock/hkdf"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/secretlock/noop"
 )
 
 const testMasterKeyURI = keywrapper.LocalKeyURIPrefix + "test/key/uri"

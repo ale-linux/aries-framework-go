@@ -16,8 +16,8 @@ import (
 	"github.com/hyperledger/ursa-wrapper-go/pkg/libursa/ursa"
 	"github.com/stretchr/testify/require"
 
-	bld "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/blinder"
-	sgn "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/signer"
+	bld "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/blinder"
+	sgn "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/signer"
 )
 
 func TestCL(t *testing.T) {

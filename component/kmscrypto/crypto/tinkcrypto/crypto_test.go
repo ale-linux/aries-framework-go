@@ -26,14 +26,14 @@ import (
 
 	cryptoapi "github.com/hyperledger/aries-framework-go/spi/crypto"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/aead"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/aead/subtle"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/bbs"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/ecdh"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/keyio"
-	ecdhpb "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/proto/ecdh_aead_go_proto"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/aead"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/aead/subtle"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/bbs"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/ecdh"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/keyio"
+	ecdhpb "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/proto/ecdh_aead_go_proto"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1"
 )
 
 const testMessage = "test message"

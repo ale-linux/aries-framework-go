@@ -13,8 +13,8 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/secretlock/noop"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/util/cryptoutil"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/secretlock/noop"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/util/cryptoutil"
 	"github.com/hyperledger/aries-framework-go/spi/kms"
 	"github.com/hyperledger/aries-framework-go/spi/secretlock"
 )

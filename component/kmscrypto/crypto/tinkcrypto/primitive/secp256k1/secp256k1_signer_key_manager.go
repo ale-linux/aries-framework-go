@@ -18,8 +18,8 @@ import (
 	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 	"google.golang.org/protobuf/proto"
 
-	secp256k1pb "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/proto/secp256k1_go_proto"
-	subtleSignature "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1/subtle"
+	secp256k1pb "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/proto/secp256k1_go_proto"
+	subtleSignature "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1/subtle"
 )
 
 const (

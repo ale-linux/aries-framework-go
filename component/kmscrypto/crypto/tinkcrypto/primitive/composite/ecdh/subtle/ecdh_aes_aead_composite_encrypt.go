@@ -9,8 +9,8 @@ package subtle
 import (
 	"fmt"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/api"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/api"
 )
 
 // ECDHAEADCompositeEncrypt is an instance of ECDH-ES encryption with Concat KDF

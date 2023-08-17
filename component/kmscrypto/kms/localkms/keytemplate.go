@@ -19,9 +19,9 @@ import (
 
 	"github.com/hyperledger/aries-framework-go/spi/kms"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/bbs"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/ecdh"
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/bbs"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/ecdh"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1"
 )
 
 // nolint:gocyclo,funlen

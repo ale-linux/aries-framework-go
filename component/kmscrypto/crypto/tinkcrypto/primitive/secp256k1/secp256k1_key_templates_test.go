@@ -14,7 +14,7 @@ import (
 	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/secp256k1"
 )
 
 func TestKeyTemplates(t *testing.T) {

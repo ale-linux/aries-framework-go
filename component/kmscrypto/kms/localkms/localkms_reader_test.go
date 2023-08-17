@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/kms"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/kms"
 )
 
 func TestLocalKMSReader(t *testing.T) {

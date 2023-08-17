@@ -16,7 +16,7 @@ import (
 	"github.com/hyperledger/ursa-wrapper-go/pkg/libursa/ursa"
 	"github.com/stretchr/testify/require"
 
-	clsubtle "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/subtle"
+	clsubtle "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/cl/subtle"
 )
 
 func TestCLCredDefKeyTemplateSuccess(t *testing.T) {

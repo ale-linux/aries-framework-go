@@ -15,7 +15,7 @@ import (
 	"github.com/google/tink/go/testkeyset"
 	"github.com/google/tink/go/testutil"
 
-	kmsservice "github.com/hyperledger/aries-framework-go/component/kmscrypto/kms"
+	kmsservice "github.com/ale-linux/aries-framework-go/component/kmscrypto/kms"
 	"github.com/hyperledger/aries-framework-go/spi/kms"
 	"github.com/hyperledger/aries-framework-go/spi/secretlock"
 	"github.com/hyperledger/aries-framework-go/spi/storage"

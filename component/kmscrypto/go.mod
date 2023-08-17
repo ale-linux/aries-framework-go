@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/hyperledger/aries-framework-go/component/kmscrypto
+module github.com/ale-linux/aries-framework-go/component/kmscrypto
 
 go 1.19
 

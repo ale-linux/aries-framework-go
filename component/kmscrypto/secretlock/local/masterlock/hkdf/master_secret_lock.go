@@ -18,7 +18,7 @@ import (
 
 	"github.com/hyperledger/aries-framework-go/spi/secretlock"
 
-	cipherutil "github.com/hyperledger/aries-framework-go/component/kmscrypto/secretlock/local/internal/cipher"
+	cipherutil "github.com/ale-linux/aries-framework-go/component/kmscrypto/secretlock/local/internal/cipher"
 )
 
 // package hkdf provides an hkdf implementation of secretlock as a masterlock.

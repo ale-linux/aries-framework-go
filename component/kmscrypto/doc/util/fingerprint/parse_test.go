@@ -11,7 +11,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/doc/util/fingerprint"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/doc/util/fingerprint"
 )
 
 func TestCreateDIDKey(t *testing.T) {

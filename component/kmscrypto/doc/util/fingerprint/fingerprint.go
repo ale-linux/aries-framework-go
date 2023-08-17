@@ -16,7 +16,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/doc/jose/jwk"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/doc/jose/jwk"
 )
 
 const (

@@ -23,8 +23,8 @@ SPDX-License-Identifier: Apache-2.0
 //
 //      "github.com/google/tink/go/keyset"
 //
-//      "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite"
-//      "github.com/hyperledger/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/ecdh"
+//      "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite"
+//      "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/tinkcrypto/primitive/composite/ecdh"
 //  )
 //
 //  func main() {

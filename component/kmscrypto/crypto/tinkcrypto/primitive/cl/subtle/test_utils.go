@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hyperledger/aries-framework-go/component/kmscrypto/internal/ursautil"
+	"github.com/ale-linux/aries-framework-go/component/kmscrypto/internal/ursautil"
 )
 
 // NewTestCLSigner returns test CLSigner.
