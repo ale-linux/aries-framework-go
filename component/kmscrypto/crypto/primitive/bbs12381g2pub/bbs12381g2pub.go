@@ -23,21 +23,11 @@ import (
 )
 
 // nolint:gochecknoglobals
-var curve = ml.Curves[ml.BLS12_381_BBS]
+var curve *ml.Curve
 
-// BBSG2Pub defines BBS+ signature scheme where public key is a point in the field of G2.
-// BBS+ signature scheme (as defined in https://eprint.iacr.org/2016/663.pdf, section 4.3).
-type BBSG2Pub struct{}
+func SetCurve(c *ml.Curve) {
+	curve = c
 
-// New creates a new BBSG2Pub.
-func New() *BBSG2Pub {
-	return &BBSG2Pub{}
-}
-
-// Number of bytes in scalar compressed form.
-const frCompressedSize = 32
-
-var (
 	// nolint:gochecknoglobals
 	// Signature length.
 	bls12381SignatureLen = curve.CompressedG1ByteSize + 2*frCompressedSize
@@ -61,6 +51,44 @@ var (
 	// nolint:gochecknoglobals
 	// Number of bytes in scalar uncompressed form.
 	frUncompressedSize = curve.ScalarByteSize
+}
+
+// BBSG2Pub defines BBS+ signature scheme where public key is a point in the field of G2.
+// BBS+ signature scheme (as defined in https://eprint.iacr.org/2016/663.pdf, section 4.3).
+type BBSG2Pub struct{}
+
+// New creates a new BBSG2Pub.
+func New() *BBSG2Pub {
+	return &BBSG2Pub{}
+}
+
+// Number of bytes in scalar compressed form.
+const frCompressedSize = 32
+
+var (
+	// nolint:gochecknoglobals
+	// Signature length.
+	bls12381SignatureLen int
+
+	// nolint:gochecknoglobals
+	// Default BLS 12-381 public key length in G2 field.
+	bls12381G2PublicKeyLen int
+
+	// nolint:gochecknoglobals
+	// Number of bytes in G1 X coordinate.
+	g1CompressedSize int
+
+	// nolint:gochecknoglobals
+	// Number of bytes in G1 X and Y coordinates.
+	g1UncompressedSize int
+
+	// nolint:gochecknoglobals
+	// Number of bytes in G2 X(a, b) and Y(a, b) coordinates.
+	g2UncompressedSize int
+
+	// nolint:gochecknoglobals
+	// Number of bytes in scalar uncompressed form.
+	frUncompressedSize int
 )
 
 // Verify makes BLS BBS12-381 signature verification.

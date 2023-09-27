@@ -28,15 +28,35 @@ type PoKOfSignature struct {
 }
 
 // NewPoKOfSignature creates a new PoKOfSignature.
-func NewPoKOfSignature(signature *Signature, messages []*SignatureMessage, revealedIndexes []int,
-	pubKey *PublicKeyWithGenerators) (*PoKOfSignature, error) {
-	err := signature.Verify(messages, pubKey)
-	if err != nil {
-		return nil, fmt.Errorf("verify input signature: %w", err)
-	}
+func NewPoKOfSignature(
+	signature *Signature,
+	messages []*SignatureMessage,
+	revealedIndexes []int,
+	pubKey *PublicKeyWithGenerators,
+) (*PoKOfSignature, error) {
+	return NewPoKOfSignatureExt(signature, messages, revealedIndexes, pubKey, nil, nil, nil)
+}
+
+// NewPoKOfSignatureExt creates a new PoKOfSignature.
+func NewPoKOfSignatureExt(
+	signature *Signature,
+	messages []*SignatureMessage,
+	revealedIndexes []int,
+	pubKey *PublicKeyWithGenerators,
+	B *ml.G1, // this is assumed to be H0^r H[0]^sk
+	r *ml.Zr,
+	C *ml.G1, // this is assumed to be H[0]^sk
+) (*PoKOfSignature, error) {
+	// err := signature.Verify(messages, pubKey)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("verify input signature: %w", err)
+	// }
 
 	r1, r2 := createRandSignatureFr(), createRandSignatureFr()
 	b := computeB(signature.S, messages, pubKey)
+	if B != nil {
+		b.Add(C)
+	}
 	aPrime := signature.A.Mul(frToRepr(r1))
 
 	aBarDenom := aPrime.Mul(frToRepr(signature.E))
@@ -70,7 +90,12 @@ func NewPoKOfSignature(signature *Signature, messages []*SignatureMessage, revea
 	}
 
 	for _, ind := range revealedIndexes {
-		revealedMessages[ind] = messages[ind]
+		revealedMessages[messages[ind].Idx] = messages[ind]
+	}
+
+	if B != nil {
+		sPrime = sPrime.Minus(r)
+		// messages = messages[1:]
 	}
 
 	pokVC2, secrets2 := newVC2Signature(d, r3, pubKey, sPrime, messages, revealedMessages)
@@ -124,14 +149,14 @@ func newVC2Signature(d *ml.G1, r3 *ml.Zr, pubKey *PublicKeyWithGenerators, sPrim
 
 	secrets2 = append(secrets2, sPrime)
 
-	for i := 0; i < messagesCount; i++ {
-		if _, ok := revealedMessages[i]; ok {
+	for _, msg := range messages {
+		if _, ok := revealedMessages[msg.Idx]; ok {
 			continue
 		}
 
-		committing2.Commit(pubKey.H[i])
+		committing2.Commit(pubKey.H[msg.Idx])
 
-		sourceFR := messages[i].FR
+		sourceFR := msg.FR
 		hiddenFRCopy := sourceFR.Copy()
 
 		secrets2 = append(secrets2, hiddenFRCopy)

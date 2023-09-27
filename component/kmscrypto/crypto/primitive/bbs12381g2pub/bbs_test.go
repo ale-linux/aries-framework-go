@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"testing"
 
+	math "github.com/IBM/mathlib"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/primitive/bbs12381g2pub"
@@ -86,12 +87,20 @@ func TestBBSG2Pub_SignWithKeyPair(t *testing.T) {
 	signatureBytes, err := bls.SignWithKey(messagesBytes, nil, privKey)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
-	require.Len(t, signatureBytes, 112)
+	require.Len(t, signatureBytes, curve.CompressedG1ByteSize+2*32)
 
 	pubKeyBytes, err := pubKey.Marshal()
 	require.NoError(t, err)
 
 	require.NoError(t, bls.Verify(messagesBytes, signatureBytes, pubKeyBytes))
+}
+
+var curve *math.Curve
+
+func TestMain(m *testing.M) {
+	curve = math.Curves[math.BLS12_381_BBS]
+	bbs12381g2pub.SetCurve(math.Curves[math.BLS12_381_BBS])
+	m.Run()
 }
 
 func TestBBSG2Pub_Sign(t *testing.T) {
@@ -108,7 +117,7 @@ func TestBBSG2Pub_Sign(t *testing.T) {
 	signatureBytes, err := bls.Sign(messagesBytes, privKeyBytes)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
-	require.Len(t, signatureBytes, 112)
+	require.Len(t, signatureBytes, curve.CompressedG1ByteSize+2*32)
 
 	pubKeyBytes, err := pubKey.Marshal()
 	require.NoError(t, err)

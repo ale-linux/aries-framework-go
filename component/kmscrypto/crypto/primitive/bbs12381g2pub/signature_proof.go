@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 
+	math "github.com/IBM/mathlib"
 	ml "github.com/IBM/mathlib"
 )
 
@@ -54,6 +55,17 @@ func (sp *PoKOfSignatureProof) GetBytesForChallenge(revealedMessages map[int]*Si
 // Verify verifies PoKOfSignatureProof.
 func (sp *PoKOfSignatureProof) Verify(challenge *ml.Zr, pubKey *PublicKeyWithGenerators,
 	revealedMessages map[int]*SignatureMessage, messages []*SignatureMessage) error {
+	return sp.VerifyExt(challenge, pubKey, revealedMessages, messages, nil)
+}
+
+// VerifyExt verifies PoKOfSignatureProof.
+func (sp *PoKOfSignatureProof) VerifyExt(
+	challenge *ml.Zr,
+	pubKey *PublicKeyWithGenerators,
+	revealedMessages map[int]*SignatureMessage,
+	messages []*SignatureMessage,
+	B *math.G1,
+) error {
 	aBar := sp.aBar.Copy()
 	aBar.Neg()
 
@@ -67,7 +79,7 @@ func (sp *PoKOfSignatureProof) Verify(challenge *ml.Zr, pubKey *PublicKeyWithGen
 		return err
 	}
 
-	return sp.verifyVC2Proof(challenge, pubKey, revealedMessages, messages)
+	return sp.verifyVC2Proof(challenge, pubKey, revealedMessages, messages, B)
 }
 
 func (sp *PoKOfSignatureProof) verifyVC1Proof(challenge *ml.Zr, pubKey *PublicKeyWithGenerators) error {
@@ -84,7 +96,7 @@ func (sp *PoKOfSignatureProof) verifyVC1Proof(challenge *ml.Zr, pubKey *PublicKe
 }
 
 func (sp *PoKOfSignatureProof) verifyVC2Proof(challenge *ml.Zr, pubKey *PublicKeyWithGenerators,
-	revealedMessages map[int]*SignatureMessage, messages []*SignatureMessage) error {
+	revealedMessages map[int]*SignatureMessage, messages []*SignatureMessage, B *math.G1) error {
 	revealedMessagesCount := len(revealedMessages)
 
 	basesVC2 := make([]*ml.G1, 0, 2+pubKey.messagesCount-revealedMessagesCount)
@@ -99,6 +111,10 @@ func (sp *PoKOfSignatureProof) verifyVC2Proof(challenge *ml.Zr, pubKey *PublicKe
 	revealedMessagesInd := 0
 
 	for i := range pubKey.H {
+		if B != nil && i == 0 {
+			continue
+		}
+
 		if _, ok := revealedMessages[i]; ok {
 			basesDisclosed = append(basesDisclosed, pubKey.H[i])
 			exponents = append(exponents, messages[revealedMessagesInd].FR)
@@ -106,6 +122,11 @@ func (sp *PoKOfSignatureProof) verifyVC2Proof(challenge *ml.Zr, pubKey *PublicKe
 		} else {
 			basesVC2 = append(basesVC2, pubKey.H[i])
 		}
+	}
+
+	if B != nil {
+		basesDisclosed = append(basesDisclosed, B)
+		exponents = append(exponents, curve.NewZrFromInt(1))
 	}
 
 	// TODO: expose 0
