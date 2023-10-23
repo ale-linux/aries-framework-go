@@ -9,12 +9,13 @@ package bbs12381g2pub
 import (
 	"crypto/rand"
 
+	math "github.com/IBM/mathlib"
 	ml "github.com/IBM/mathlib"
 	"golang.org/x/crypto/blake2b"
 )
 
-func parseFr(data []byte) *ml.Zr {
-	return curve.NewZrFromBytes(data)
+func (b *bbsLib) parseFr(data []byte) *ml.Zr {
+	return b.curve.NewZrFromBytes(data)
 }
 
 // nolint:gochecknoglobals
@@ -25,11 +26,11 @@ var f2192Bytes = []byte{
 	0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 }
 
-func f2192() *ml.Zr {
+func f2192(curve *math.Curve) *ml.Zr {
 	return curve.NewZrFromBytes(f2192Bytes)
 }
 
-func FrFromOKM(message []byte) *ml.Zr {
+func FrFromOKM(message []byte, curve *math.Curve) *ml.Zr {
 	const (
 		eightBytes = 8
 		okmMiddle  = 24
@@ -44,7 +45,7 @@ func FrFromOKM(message []byte) *ml.Zr {
 	emptyEightBytes := make([]byte, eightBytes)
 
 	elm := curve.NewZrFromBytes(append(emptyEightBytes, okm[:okmMiddle]...))
-	elm = elm.Mul(f2192())
+	elm = elm.Mul(f2192(curve))
 
 	fr := curve.NewZrFromBytes(append(emptyEightBytes, okm[okmMiddle:]...))
 	elm = elm.Plus(fr)
@@ -56,16 +57,16 @@ func frToRepr(fr *ml.Zr) *ml.Zr {
 	return fr.Copy()
 }
 
-func messagesToFr(messages [][]byte) []*SignatureMessage {
+func messagesToFr(messages [][]byte, curve *math.Curve) []*SignatureMessage {
 	messagesFr := make([]*SignatureMessage, len(messages))
 
 	for i := range messages {
-		messagesFr[i] = ParseSignatureMessage(messages[i], i)
+		messagesFr[i] = ParseSignatureMessage(messages[i], i, curve)
 	}
 
 	return messagesFr
 }
 
-func createRandSignatureFr() *ml.Zr {
-	return curve.NewRandomZr(rand.Reader)
+func (b *bbsLib) createRandSignatureFr() *ml.Zr {
+	return b.curve.NewRandomZr(rand.Reader)
 }

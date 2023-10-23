@@ -19,86 +19,69 @@ import (
 	"fmt"
 	"sort"
 
-	ml "github.com/IBM/mathlib"
+	math "github.com/IBM/mathlib"
 )
 
-// nolint:gochecknoglobals
-var curve *ml.Curve
+func NewBBSLib(curve *math.Curve) *bbsLib {
+	return &bbsLib{
+		curve: curve,
 
-func SetCurve(c *ml.Curve) {
-	curve = c
+		// Signature length.
+		bls12381SignatureLen: curve.CompressedG1ByteSize + 2*frCompressedSize,
 
-	// nolint:gochecknoglobals
-	// Signature length.
-	bls12381SignatureLen = curve.CompressedG1ByteSize + 2*frCompressedSize
+		// Default BLS 12-381 public key length in G2 field.
+		bls12381G2PublicKeyLen: curve.CompressedG2ByteSize,
 
-	// nolint:gochecknoglobals
-	// Default BLS 12-381 public key length in G2 field.
-	bls12381G2PublicKeyLen = curve.CompressedG2ByteSize
+		// Number of bytes in G1 X coordinate.
+		g1CompressedSize: curve.CompressedG1ByteSize,
 
-	// nolint:gochecknoglobals
-	// Number of bytes in G1 X coordinate.
-	g1CompressedSize = curve.CompressedG1ByteSize
+		// Number of bytes in G1 X and Y coordinates.
+		g1UncompressedSize: curve.G1ByteSize,
 
-	// nolint:gochecknoglobals
-	// Number of bytes in G1 X and Y coordinates.
-	g1UncompressedSize = curve.G1ByteSize
+		// Number of bytes in G2 X(a, b) and Y(a, b) coordinates.
+		g2UncompressedSize: curve.G2ByteSize,
 
-	// nolint:gochecknoglobals
-	// Number of bytes in G2 X(a, b) and Y(a, b) coordinates.
-	g2UncompressedSize = curve.G2ByteSize
+		// Number of bytes in scalar uncompressed form.
+		frUncompressedSize: curve.ScalarByteSize,
+	}
+}
 
-	// nolint:gochecknoglobals
-	// Number of bytes in scalar uncompressed form.
-	frUncompressedSize = curve.ScalarByteSize
+type bbsLib struct {
+	curve                  *math.Curve
+	bls12381SignatureLen   int
+	bls12381G2PublicKeyLen int
+	g1CompressedSize       int
+	g1UncompressedSize     int
+	g2UncompressedSize     int
+	frUncompressedSize     int
 }
 
 // BBSG2Pub defines BBS+ signature scheme where public key is a point in the field of G2.
 // BBS+ signature scheme (as defined in https://eprint.iacr.org/2016/663.pdf, section 4.3).
-type BBSG2Pub struct{}
+type BBSG2Pub struct {
+	curve *math.Curve
+	lib   *bbsLib
+}
 
 // New creates a new BBSG2Pub.
-func New() *BBSG2Pub {
-	return &BBSG2Pub{}
+func New(curve *math.Curve) *BBSG2Pub {
+	return &BBSG2Pub{
+		curve: curve,
+		lib:   NewBBSLib(curve),
+	}
 }
 
 // Number of bytes in scalar compressed form.
 const frCompressedSize = 32
 
-var (
-	// nolint:gochecknoglobals
-	// Signature length.
-	bls12381SignatureLen int
-
-	// nolint:gochecknoglobals
-	// Default BLS 12-381 public key length in G2 field.
-	bls12381G2PublicKeyLen int
-
-	// nolint:gochecknoglobals
-	// Number of bytes in G1 X coordinate.
-	g1CompressedSize int
-
-	// nolint:gochecknoglobals
-	// Number of bytes in G1 X and Y coordinates.
-	g1UncompressedSize int
-
-	// nolint:gochecknoglobals
-	// Number of bytes in G2 X(a, b) and Y(a, b) coordinates.
-	g2UncompressedSize int
-
-	// nolint:gochecknoglobals
-	// Number of bytes in scalar uncompressed form.
-	frUncompressedSize int
-)
-
 // Verify makes BLS BBS12-381 signature verification.
 func (bbs *BBSG2Pub) Verify(messages [][]byte, sigBytes, pubKeyBytes []byte) error {
-	signature, err := ParseSignature(sigBytes)
+	signature, err := bbs.lib.ParseSignature(sigBytes)
 	if err != nil {
 		return fmt.Errorf("parse signature: %w", err)
 	}
 
-	pubKey, err := UnmarshalPublicKey(pubKeyBytes)
+	pubKey, err := bbs.lib.UnmarshalPublicKey(pubKeyBytes)
 	if err != nil {
 		return fmt.Errorf("parse public key: %w", err)
 	}
@@ -110,14 +93,14 @@ func (bbs *BBSG2Pub) Verify(messages [][]byte, sigBytes, pubKeyBytes []byte) err
 		return fmt.Errorf("build generators from public key: %w", err)
 	}
 
-	messagesFr := messagesToFr(messages)
+	messagesFr := messagesToFr(messages, bbs.curve)
 
 	return signature.Verify(messagesFr, publicKeyWithGenerators)
 }
 
 // Sign signs the one or more messages using private key in compressed form.
 func (bbs *BBSG2Pub) Sign(messages [][]byte, privKeyBytes []byte) ([]byte, error) {
-	privKey, err := UnmarshalPrivateKey(privKeyBytes)
+	privKey, err := bbs.lib.UnmarshalPrivateKey(privKeyBytes)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal private key: %w", err)
 	}
@@ -132,7 +115,7 @@ func (bbs *BBSG2Pub) Sign(messages [][]byte, privKeyBytes []byte) ([]byte, error
 // VerifyProof verifies BBS+ signature proof for one ore more revealed messages.
 func (bbs *BBSG2Pub) VerifyProof(messagesBytes [][]byte, proof, nonce, pubKeyBytes []byte) error {
 
-	messages := messagesToFr(messagesBytes)
+	messages := messagesToFr(messagesBytes, bbs.curve)
 
 	return bbs.VerifyProofFr(messages, proof, nonce, pubKeyBytes)
 }
@@ -144,12 +127,12 @@ func (bbs *BBSG2Pub) VerifyProofFr(messages []*SignatureMessage, proof, nonce, p
 		return fmt.Errorf("parse signature proof: %w", err)
 	}
 
-	signatureProof, err := ParseSignatureProof(proof[payload.LenInBytes():])
+	signatureProof, err := bbs.lib.ParseSignatureProof(proof[payload.LenInBytes():])
 	if err != nil {
 		return fmt.Errorf("parse signature proof: %w", err)
 	}
 
-	pubKey, err := UnmarshalPublicKey(pubKeyBytes)
+	pubKey, err := bbs.lib.UnmarshalPublicKey(pubKeyBytes)
 	if err != nil {
 		return fmt.Errorf("parse public key: %w", err)
 	}
@@ -169,10 +152,10 @@ func (bbs *BBSG2Pub) VerifyProofFr(messages []*SignatureMessage, proof, nonce, p
 	}
 
 	challengeBytes := signatureProof.GetBytesForChallenge(revealedMessages, publicKeyWithGenerators)
-	proofNonce := ParseProofNonce(nonce)
+	proofNonce := ParseProofNonce(nonce, bbs.curve)
 	proofNonceBytes := proofNonce.ToBytes()
 	challengeBytes = append(challengeBytes, proofNonceBytes...)
-	proofChallenge := FrFromOKM(challengeBytes)
+	proofChallenge := FrFromOKM(challengeBytes, bbs.curve)
 
 	return signatureProof.Verify(proofChallenge, publicKeyWithGenerators, revealedMessages, messages)
 }
@@ -181,7 +164,7 @@ func (bbs *BBSG2Pub) VerifyProofFr(messages []*SignatureMessage, proof, nonce, p
 func (bbs *BBSG2Pub) DeriveProof(messages [][]byte, sigBytes, nonce, pubKeyBytes []byte,
 	revealedIndexes []int) ([]byte, error) {
 
-	return bbs.DeriveProofZr(messagesToFr(messages), sigBytes, nonce, pubKeyBytes, revealedIndexes)
+	return bbs.DeriveProofZr(messagesToFr(messages, bbs.curve), sigBytes, nonce, pubKeyBytes, revealedIndexes)
 }
 
 // DeriveProof derives a proof of BBS+ signature with some messages disclosed.
@@ -196,7 +179,7 @@ func (bbs *BBSG2Pub) DeriveProofZr(messagesFr []*SignatureMessage, sigBytes, non
 
 	messagesCount := len(messagesFr)
 
-	pubKey, err := UnmarshalPublicKey(pubKeyBytes)
+	pubKey, err := bbs.lib.UnmarshalPublicKey(pubKeyBytes)
 	if err != nil {
 		return nil, fmt.Errorf("parse public key: %w", err)
 	}
@@ -206,23 +189,23 @@ func (bbs *BBSG2Pub) DeriveProofZr(messagesFr []*SignatureMessage, sigBytes, non
 		return nil, fmt.Errorf("build generators from public key: %w", err)
 	}
 
-	signature, err := ParseSignature(sigBytes)
+	signature, err := bbs.lib.ParseSignature(sigBytes)
 	if err != nil {
 		return nil, fmt.Errorf("parse signature: %w", err)
 	}
 
-	pokSignature, err := NewPoKOfSignature(signature, messagesFr, revealedIndexes, publicKeyWithGenerators)
+	pokSignature, err := bbs.lib.NewPoKOfSignature(signature, messagesFr, revealedIndexes, publicKeyWithGenerators)
 	if err != nil {
 		return nil, fmt.Errorf("init proof of knowledge signature: %w", err)
 	}
 
 	challengeBytes := pokSignature.ToBytes()
 
-	proofNonce := ParseProofNonce(nonce)
+	proofNonce := ParseProofNonce(nonce, bbs.curve)
 	proofNonceBytes := proofNonce.ToBytes()
 	challengeBytes = append(challengeBytes, proofNonceBytes...)
 
-	proofChallenge := FrFromOKM(challengeBytes)
+	proofChallenge := FrFromOKM(challengeBytes, bbs.curve)
 
 	proof := pokSignature.GenerateProof(proofChallenge)
 
@@ -239,7 +222,7 @@ func (bbs *BBSG2Pub) DeriveProofZr(messagesFr []*SignatureMessage, sigBytes, non
 }
 
 // SignWithKey signs the one or more messages using BBS+ key pair.
-func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, commitment *ml.G1, privKey *PrivateKey) ([]byte, error) {
+func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, commitment *math.G1, privKey *PrivateKey) ([]byte, error) {
 
 	messagesFr := make([]*SignatureMessage, 0, len(messages))
 
@@ -248,14 +231,14 @@ func (bbs *BBSG2Pub) SignWithKey(messages [][]byte, commitment *ml.G1, privKey *
 			continue
 		}
 
-		messagesFr = append(messagesFr, ParseSignatureMessage(messages[i], i))
+		messagesFr = append(messagesFr, ParseSignatureMessage(messages[i], i, bbs.curve))
 	}
 
 	return bbs.SignWithKeyFr(messagesFr, len(messages), commitment, privKey)
 }
 
 // SignWithKey signs the one or more messages using BBS+ key pair.
-func (bbs *BBSG2Pub) SignWithKeyFr(messagesFr []*SignatureMessage, messagesCount int, commitment *ml.G1, privKey *PrivateKey) ([]byte, error) {
+func (bbs *BBSG2Pub) SignWithKeyFr(messagesFr []*SignatureMessage, messagesCount int, commitment *math.G1, privKey *PrivateKey) ([]byte, error) {
 	var err error
 
 	pubKey := privKey.PublicKey()
@@ -265,12 +248,12 @@ func (bbs *BBSG2Pub) SignWithKeyFr(messagesFr []*SignatureMessage, messagesCount
 		return nil, fmt.Errorf("build generators from public key: %w", err)
 	}
 
-	e, s := createRandSignatureFr(), createRandSignatureFr()
+	e, s := bbs.lib.createRandSignatureFr(), bbs.lib.createRandSignatureFr()
 	exp := privKey.FR.Copy()
 	exp = exp.Plus(e)
-	exp.InvModP(curve.GroupOrder)
+	exp.InvModP(bbs.curve.GroupOrder)
 
-	b := computeB(s, messagesFr, pubKeyWithGenerators)
+	b := computeB(s, messagesFr, pubKeyWithGenerators, bbs.curve)
 	if len(messagesFr) != messagesCount {
 		b.Add(commitment)
 	}
@@ -278,15 +261,16 @@ func (bbs *BBSG2Pub) SignWithKeyFr(messagesFr []*SignatureMessage, messagesCount
 	sig := b.Mul(frToRepr(exp))
 
 	signature := &Signature{
-		A: sig,
-		E: e,
-		S: s,
+		A:     sig,
+		E:     e,
+		S:     s,
+		curve: bbs.curve,
 	}
 
 	return signature.ToBytes()
 }
 
-func computeB(s *ml.Zr, messages []*SignatureMessage, key *PublicKeyWithGenerators) *ml.G1 {
+func computeB(s *math.Zr, messages []*SignatureMessage, key *PublicKeyWithGenerators, curve *math.Curve) *math.G1 {
 	const basesOffset = 2
 
 	cb := NewCommitmentBuilder(len(messages) + basesOffset)
@@ -302,28 +286,28 @@ func computeB(s *ml.Zr, messages []*SignatureMessage, key *PublicKeyWithGenerato
 }
 
 type commitmentBuilder struct {
-	bases   []*ml.G1
-	scalars []*ml.Zr
+	bases   []*math.G1
+	scalars []*math.Zr
 }
 
 func NewCommitmentBuilder(expectedSize int) *commitmentBuilder {
 	return &commitmentBuilder{
-		bases:   make([]*ml.G1, 0, expectedSize),
-		scalars: make([]*ml.Zr, 0, expectedSize),
+		bases:   make([]*math.G1, 0, expectedSize),
+		scalars: make([]*math.Zr, 0, expectedSize),
 	}
 }
 
-func (cb *commitmentBuilder) Add(base *ml.G1, scalar *ml.Zr) {
+func (cb *commitmentBuilder) Add(base *math.G1, scalar *math.Zr) {
 	cb.bases = append(cb.bases, base)
 	cb.scalars = append(cb.scalars, scalar)
 }
 
-func (cb *commitmentBuilder) Build() *ml.G1 {
+func (cb *commitmentBuilder) Build() *math.G1 {
 	return sumOfG1Products(cb.bases, cb.scalars)
 }
 
-func sumOfG1Products(bases []*ml.G1, scalars []*ml.Zr) *ml.G1 {
-	var res *ml.G1
+func sumOfG1Products(bases []*math.G1, scalars []*math.Zr) *math.G1 {
+	var res *math.G1
 
 	for i := 0; i < len(bases); i++ {
 		b := bases[i]
@@ -340,8 +324,8 @@ func sumOfG1Products(bases []*ml.G1, scalars []*ml.Zr) *ml.G1 {
 	return res
 }
 
-func compareTwoPairings(p1 *ml.G1, q1 *ml.G2,
-	p2 *ml.G1, q2 *ml.G2) bool {
+func compareTwoPairings(p1 *math.G1, q1 *math.G2,
+	p2 *math.G1, q2 *math.G2, curve *math.Curve) bool {
 	p := curve.Pairing2(q1, p1, q2, p2)
 	p = curve.FExp(p)
 
@@ -350,13 +334,13 @@ func compareTwoPairings(p1 *ml.G1, q1 *ml.G2,
 
 // ProofNonce is a nonce for Proof of Knowledge proof.
 type ProofNonce struct {
-	fr *ml.Zr
+	fr *math.Zr
 }
 
 // ParseProofNonce creates a new ProofNonce from bytes.
-func ParseProofNonce(proofNonceBytes []byte) *ProofNonce {
+func ParseProofNonce(proofNonceBytes []byte, curve *math.Curve) *ProofNonce {
 	return &ProofNonce{
-		FrFromOKM(proofNonceBytes),
+		FrFromOKM(proofNonceBytes, curve),
 	}
 }
 

@@ -11,16 +11,18 @@ import (
 	"crypto/sha256"
 	"testing"
 
+	math "github.com/IBM/mathlib"
+	b "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/primitive/bbs12381g2pub"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
-
-	bbs "github.com/ale-linux/aries-framework-go/component/kmscrypto/crypto/primitive/bbs12381g2pub"
 )
 
 func TestGenerateKeyPair(t *testing.T) {
 	h := sha256.New
 
 	seed := make([]byte, 32)
+
+	bbs := b.NewBBSLib(math.Curves[math.BLS12_381_BBS])
 
 	pubKey, privKey, err := bbs.GenerateKeyPair(h, seed)
 	require.NoError(t, err)
@@ -49,6 +51,8 @@ func TestPrivateKey_Marshal(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, privKeyBytes)
 
+	bbs := b.NewBBSLib(math.Curves[math.BLS12_381_BBS])
+
 	privKeyUnmarshalled, err := bbs.UnmarshalPrivateKey(privKeyBytes)
 	require.NoError(t, err)
 	require.NotNil(t, privKeyUnmarshalled)
@@ -70,6 +74,8 @@ func TestPublicKey_Marshal(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pubKeyBytes)
 
+	bbs := b.NewBBSLib(math.Curves[math.BLS12_381_BBS])
+
 	pubKeyUnmarshalled, err := bbs.UnmarshalPublicKey(pubKeyBytes)
 	require.NoError(t, err)
 	require.NotNil(t, pubKeyUnmarshalled)
@@ -84,20 +90,22 @@ func TestParseMattrKeys(t *testing.T) {
 	pubKeyBytes := base58.Decode(pubKeyB58)
 
 	messagesBytes := [][]byte{[]byte("message1"), []byte("message2")}
-	signatureBytes, err := bbs.New().Sign(messagesBytes, privKeyBytes)
+	signatureBytes, err := b.New(math.Curves[math.BLS12_381_BBS]).Sign(messagesBytes, privKeyBytes)
 	require.NoError(t, err)
 
-	err = bbs.New().Verify(messagesBytes, signatureBytes, pubKeyBytes)
+	err = b.New(math.Curves[math.BLS12_381_BBS]).Verify(messagesBytes, signatureBytes, pubKeyBytes)
 	require.NoError(t, err)
 }
 
-func generateKeyPairRandom() (*bbs.PublicKey, *bbs.PrivateKey, error) {
+func generateKeyPairRandom() (*b.PublicKey, *b.PrivateKey, error) {
 	seed := make([]byte, 32)
 
 	_, err := rand.Read(seed)
 	if err != nil {
 		panic(err)
 	}
+
+	bbs := b.NewBBSLib(math.Curves[math.BLS12_381_BBS])
 
 	return bbs.GenerateKeyPair(sha256.New, seed)
 }

@@ -29,7 +29,7 @@ func TestBlsG2Pub_Verify(t *testing.T) {
 
 	messagesBytes := [][]byte{[]byte("message1"), []byte("message2")}
 
-	bls := bbs12381g2pub.New()
+	bls := bbs12381g2pub.New(math.Curves[math.BLS12_381_BBS])
 
 	t.Run("valid signature", func(t *testing.T) {
 		err = bls.Verify(messagesBytes, sigBytes, pkBytes)
@@ -80,14 +80,14 @@ func TestBBSG2Pub_SignWithKeyPair(t *testing.T) {
 	pubKey, privKey, err := generateKeyPairRandom()
 	require.NoError(t, err)
 
-	bls := bbs12381g2pub.New()
+	bls := bbs12381g2pub.New(math.Curves[math.BLS12_381_BBS])
 
 	messagesBytes := [][]byte{[]byte("message1"), []byte("message2")}
 
 	signatureBytes, err := bls.SignWithKey(messagesBytes, nil, privKey)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
-	require.Len(t, signatureBytes, curve.CompressedG1ByteSize+2*32)
+	require.Len(t, signatureBytes, math.Curves[math.BLS12_381_BBS].CompressedG1ByteSize+2*32)
 
 	pubKeyBytes, err := pubKey.Marshal()
 	require.NoError(t, err)
@@ -95,19 +95,11 @@ func TestBBSG2Pub_SignWithKeyPair(t *testing.T) {
 	require.NoError(t, bls.Verify(messagesBytes, signatureBytes, pubKeyBytes))
 }
 
-var curve *math.Curve
-
-func TestMain(m *testing.M) {
-	curve = math.Curves[math.BLS12_381_BBS]
-	bbs12381g2pub.SetCurve(math.Curves[math.BLS12_381_BBS])
-	m.Run()
-}
-
 func TestBBSG2Pub_Sign(t *testing.T) {
 	pubKey, privKey, err := generateKeyPairRandom()
 	require.NoError(t, err)
 
-	bls := bbs12381g2pub.New()
+	bls := bbs12381g2pub.New(math.Curves[math.BLS12_381_BBS])
 
 	messagesBytes := [][]byte{[]byte("message1"), []byte("message2")}
 
@@ -117,7 +109,7 @@ func TestBBSG2Pub_Sign(t *testing.T) {
 	signatureBytes, err := bls.Sign(messagesBytes, privKeyBytes)
 	require.NoError(t, err)
 	require.NotEmpty(t, signatureBytes)
-	require.Len(t, signatureBytes, curve.CompressedG1ByteSize+2*32)
+	require.Len(t, signatureBytes, math.Curves[math.BLS12_381_BBS].CompressedG1ByteSize+2*32)
 
 	pubKeyBytes, err := pubKey.Marshal()
 	require.NoError(t, err)
@@ -152,7 +144,7 @@ func TestBBSG2Pub_VerifyProof(t *testing.T) {
 	messagesBytes := [][]byte{[]byte("message1"), []byte("message2")}
 	revealedMessagesBytes := messagesBytes[:1]
 
-	bls := bbs12381g2pub.New()
+	bls := bbs12381g2pub.New(math.Curves[math.BLS12_381_BBS])
 
 	t.Run("valid signature proof", func(t *testing.T) {
 		err = bls.VerifyProof(revealedMessagesBytes, proofBytes, nonce, pkBytes)
@@ -221,7 +213,7 @@ func TestBBSG2Pub_VerifyProof_SeveralDisclosedMessages(t *testing.T) {
 	}
 	revealedMessagesBytes := [][]byte{messagesBytes[0], messagesBytes[2]}
 
-	bls := bbs12381g2pub.New()
+	bls := bbs12381g2pub.New(math.Curves[math.BLS12_381_BBS])
 
 	t.Run("valid signature", func(t *testing.T) {
 		err = bls.VerifyProof(revealedMessagesBytes, proofBytes, nonce, pkBytes)
@@ -242,7 +234,7 @@ func TestBBSG2Pub_DeriveProof(t *testing.T) {
 		[]byte("message3"),
 		[]byte("message4"),
 	}
-	bls := bbs12381g2pub.New()
+	bls := bbs12381g2pub.New(math.Curves[math.BLS12_381_BBS])
 
 	signatureBytes, err := bls.Sign(messagesBytes, privKeyBytes)
 	require.NoError(t, err)

@@ -13,6 +13,7 @@ import (
 	"hash"
 	"io"
 
+	math "github.com/IBM/mathlib"
 	ml "github.com/IBM/mathlib"
 	"golang.org/x/crypto/hkdf"
 )
@@ -27,12 +28,14 @@ var (
 
 // PublicKey defines BLS Public Key.
 type PublicKey struct {
+	curve   *math.Curve
 	PointG2 *ml.G2
 }
 
 // PrivateKey defines BLS Public Key.
 type PrivateKey struct {
-	FR *ml.Zr
+	FR    *ml.Zr
+	curve *math.Curve
 }
 
 // PublicKeyWithGenerators extends PublicKey with a blinding generator h0, a commitment to the secret key w,
@@ -48,11 +51,11 @@ type PublicKeyWithGenerators struct {
 
 // ToPublicKeyWithGenerators creates PublicKeyWithGenerators from the PublicKey.
 func (pk *PublicKey) ToPublicKeyWithGenerators(messagesCount int) (*PublicKeyWithGenerators, error) {
-	offset := g2UncompressedSize + 1
+	offset := pk.curve.G2ByteSize + 1
 
 	data := calcData(pk, messagesCount)
 
-	h0 := hashToG1(data)
+	h0 := hashToG1(data, pk.curve)
 
 	h := make([]*ml.G1, messagesCount)
 
@@ -66,7 +69,7 @@ func (pk *PublicKey) ToPublicKeyWithGenerators(messagesCount int) (*PublicKeyWit
 			dataCopy[j+offset] = iBytes[j]
 		}
 
-		h[i-1] = hashToG1(dataCopy)
+		h[i-1] = hashToG1(dataCopy, pk.curve)
 	}
 
 	return &PublicKeyWithGenerators{
@@ -89,22 +92,23 @@ func calcData(key *PublicKey, messagesCount int) []byte {
 	return data
 }
 
-func hashToG1(data []byte) *ml.G1 {
+func hashToG1(data []byte, curve *math.Curve) *ml.G1 {
 	var dstG1 = []byte("BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0")
 
 	return curve.HashToG1WithDomain(data, dstG1)
 }
 
 // UnmarshalPrivateKey unmarshals PrivateKey.
-func UnmarshalPrivateKey(privKeyBytes []byte) (*PrivateKey, error) {
+func (b *bbsLib) UnmarshalPrivateKey(privKeyBytes []byte) (*PrivateKey, error) {
 	if len(privKeyBytes) != frCompressedSize {
 		return nil, errors.New("invalid size of private key")
 	}
 
-	fr := parseFr(privKeyBytes)
+	fr := b.parseFr(privKeyBytes)
 
 	return &PrivateKey{
-		FR: fr,
+		FR:    fr,
+		curve: b.curve,
 	}, nil
 }
 
@@ -116,24 +120,28 @@ func (k *PrivateKey) Marshal() ([]byte, error) {
 
 // PublicKey returns a Public Key as G2 point generated from the Private Key.
 func (k *PrivateKey) PublicKey() *PublicKey {
-	pointG2 := curve.GenG2.Mul(frToRepr(k.FR))
+	pointG2 := k.curve.GenG2.Mul(frToRepr(k.FR))
 
-	return &PublicKey{pointG2}
+	return &PublicKey{
+		curve:   k.curve,
+		PointG2: pointG2,
+	}
 }
 
 // UnmarshalPublicKey parses a PublicKey from bytes.
-func UnmarshalPublicKey(pubKeyBytes []byte) (*PublicKey, error) {
-	if len(pubKeyBytes) != bls12381G2PublicKeyLen {
+func (b *bbsLib) UnmarshalPublicKey(pubKeyBytes []byte) (*PublicKey, error) {
+	if len(pubKeyBytes) != b.bls12381G2PublicKeyLen {
 		return nil, errors.New("invalid size of public key")
 	}
 
-	pointG2, err := curve.NewG2FromCompressed(pubKeyBytes)
+	pointG2, err := b.curve.NewG2FromCompressed(pubKeyBytes)
 	if err != nil {
 		return nil, fmt.Errorf("deserialize public key: %w", err)
 	}
 
 	return &PublicKey{
 		PointG2: pointG2,
+		curve:   b.curve,
 	}, nil
 }
 
@@ -145,25 +153,28 @@ func (pk *PublicKey) Marshal() ([]byte, error) {
 }
 
 // GenerateKeyPair generates BBS+ PublicKey and PrivateKey pair.
-func GenerateKeyPair(h func() hash.Hash, seed []byte) (*PublicKey, *PrivateKey, error) {
+func (b *bbsLib) GenerateKeyPair(h func() hash.Hash, seed []byte) (*PublicKey, *PrivateKey, error) {
 	if len(seed) != 0 && len(seed) != seedSize {
 		return nil, nil, errors.New("invalid size of seed")
 	}
 
-	okm, err := generateOKM(seed, h)
+	okm, err := generateOKM(seed, h, b.curve)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	privKeyFr := FrFromOKM(okm)
+	privKeyFr := FrFromOKM(okm, b.curve)
 
-	privKey := &PrivateKey{privKeyFr}
+	privKey := &PrivateKey{
+		FR:    privKeyFr,
+		curve: b.curve,
+	}
 	pubKey := privKey.PublicKey()
 
 	return pubKey, privKey, nil
 }
 
-func generateOKM(ikm []byte, h func() hash.Hash) ([]byte, error) {
+func generateOKM(ikm []byte, h func() hash.Hash, curve *math.Curve) ([]byte, error) {
 	salt := []byte(generateKeySalt)
 	info := make([]byte, 2)
 
@@ -180,7 +191,7 @@ func generateOKM(ikm []byte, h func() hash.Hash) ([]byte, error) {
 		ikm[seedSize] = 0
 	}
 
-	return newHKDF(h, ikm, salt, info, frUncompressedSize)
+	return newHKDF(h, ikm, salt, info, curve.ScalarByteSize)
 }
 
 func newHKDF(h func() hash.Hash, ikm, salt, info []byte, length int) ([]byte, error) {

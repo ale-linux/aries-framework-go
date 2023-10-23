@@ -10,44 +10,47 @@ import (
 	"errors"
 	"fmt"
 
+	math "github.com/IBM/mathlib"
 	ml "github.com/IBM/mathlib"
 )
 
 // Signature defines BLS signature.
 type Signature struct {
-	A *ml.G1
-	E *ml.Zr
-	S *ml.Zr
+	A     *ml.G1
+	E     *ml.Zr
+	S     *ml.Zr
+	curve *math.Curve
 }
 
 // ParseSignature parses a Signature from bytes.
-func ParseSignature(sigBytes []byte) (*Signature, error) {
-	if len(sigBytes) != bls12381SignatureLen {
+func (b *bbsLib) ParseSignature(sigBytes []byte) (*Signature, error) {
+	if len(sigBytes) != b.bls12381SignatureLen {
 		return nil, errors.New("invalid size of signature")
 	}
 
-	pointG1, err := curve.NewG1FromCompressed(sigBytes[:g1CompressedSize])
+	pointG1, err := b.curve.NewG1FromCompressed(sigBytes[:b.g1CompressedSize])
 	if err != nil {
 		return nil, fmt.Errorf("deserialize G1 compressed signature: %w", err)
 	}
 
-	e := parseFr(sigBytes[g1CompressedSize : g1CompressedSize+frCompressedSize])
-	s := parseFr(sigBytes[g1CompressedSize+frCompressedSize:])
+	e := b.parseFr(sigBytes[b.g1CompressedSize : b.g1CompressedSize+frCompressedSize])
+	s := b.parseFr(sigBytes[b.g1CompressedSize+frCompressedSize:])
 
 	return &Signature{
-		A: pointG1,
-		E: e,
-		S: s,
+		A:     pointG1,
+		E:     e,
+		S:     s,
+		curve: b.curve,
 	}, nil
 }
 
 // ToBytes converts signature to bytes using compression of G1 point and E, S FR points.
 func (s *Signature) ToBytes() ([]byte, error) {
-	bytes := make([]byte, bls12381SignatureLen)
+	bytes := make([]byte, s.curve.CompressedG1ByteSize+2*frCompressedSize)
 
 	copy(bytes, s.A.Compressed())
-	copy(bytes[g1CompressedSize:g1CompressedSize+frCompressedSize], s.E.Bytes())
-	copy(bytes[g1CompressedSize+frCompressedSize:], s.S.Bytes())
+	copy(bytes[s.curve.CompressedG1ByteSize:s.curve.CompressedG1ByteSize+frCompressedSize], s.E.Bytes())
+	copy(bytes[s.curve.CompressedG1ByteSize+frCompressedSize:], s.S.Bytes())
 
 	return bytes, nil
 }
@@ -56,13 +59,13 @@ func (s *Signature) ToBytes() ([]byte, error) {
 func (s *Signature) Verify(messages []*SignatureMessage, pubKey *PublicKeyWithGenerators) error {
 	p1 := s.A
 
-	q1 := curve.GenG2.Mul(frToRepr(s.E))
+	q1 := s.curve.GenG2.Mul(frToRepr(s.E))
 	q1.Add(pubKey.w)
 
-	p2 := computeB(s.S, messages, pubKey)
+	p2 := computeB(s.S, messages, pubKey, s.curve)
 	p2.Neg()
 
-	if compareTwoPairings(p1, q1, p2, curve.GenG2) {
+	if compareTwoPairings(p1, q1, p2, s.curve.GenG2, s.curve) {
 		return nil
 	}
 
